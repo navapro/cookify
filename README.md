@@ -1,6 +1,6 @@
-================================================================================
+
 README.txt - Sample MySQL Database Setup
-================================================================================
+============================================
 
 This document describes how to create and populate a sample MySQL database
 named `sample_company_db` with a single table called `employees`.

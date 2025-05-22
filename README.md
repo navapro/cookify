@@ -1,7 +1,6 @@
-================================================================================
-Recipe Curation Platform - "Hello World" Database Setup & Application
-================================================================================
 
+Recipe Curation Platform - "Hello World" Database Setup & Application
+=======================================================================
 This document describes how to create a sample MySQL database and run a simple
 Python application to interact with it. This serves as a basic test to ensure
 your development environment is correctly configured for the project.

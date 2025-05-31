@@ -8,6 +8,9 @@ your development environment is correctly configured for the project.
 Our project is a personalized platform that curates recipes the way Spotify
 curates music. This toy example will use a single table called 'Recipes'.
 
+Run this to install required python packages:
+pip install -r requirements.txt
+
 --------------------------------------------------------------------------------
 I. Prerequisites
 --------------------------------------------------------------------------------

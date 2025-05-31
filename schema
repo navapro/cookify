@@ -1,0 +1,76 @@
+Table Users {
+  User_ID int [pk, increment]
+  Name varchar
+  Email varchar [unique]
+  Password varchar
+  Date_of_Birth date
+  Profile_Image text
+  Cookify_Level int
+}
+
+Table Recipes {
+  Recipe_ID int [pk, increment]
+  Name varchar
+  Duration int // in minutes
+  Difficulty varchar
+  Cuisine varchar
+  Instructions text
+  Recipe_Link varchar
+}
+
+Table Ingredients {
+  Ingredient_ID int [pk, increment]
+  Name varchar
+  Season varchar
+  Price float
+  Nutritional_Info text
+}
+
+Table Recipe_Ingredients {
+  Recipe_ID int [ref: > Recipes.Recipe_ID]
+  Ingredient_ID int [ref: > Ingredients.Ingredient_ID]
+  Quantity varchar
+  Note text
+
+  indexes {
+    (Recipe_ID, Ingredient_ID) [pk]
+  }
+}
+
+
+Table CookList {
+  CookList_ID int [pk, increment]
+  User_ID int [ref: > Users.User_ID]
+  Name varchar
+  Description text
+  Created_At datetime
+}
+Table CookList_Recipes {
+  CookList_ID int [ref: > CookList.CookList_ID]
+  Recipe_ID int [ref: > Recipes.Recipe_ID]
+
+  indexes {
+    (CookList_ID, Recipe_ID) [pk]
+  }
+}
+
+Table Recipe_Likes {
+  User_ID int [ref: > Users.User_ID]
+  Recipe_ID int [ref: > Recipes.Recipe_ID]
+  Liked_At datetime
+
+  indexes {
+    (User_ID, Recipe_ID) [pk]
+  }
+}
+
+Table CookList_Likes {
+  User_ID int [ref: > Users.User_ID]
+  CookList_ID int [ref: > CookList.CookList_ID]
+  Liked_At datetime
+
+  indexes {
+    (User_ID, CookList_ID) [pk]
+  }
+}
+

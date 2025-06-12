@@ -1,5 +1,4 @@
 import mysql.connector
-from config import Config  # keep this if you still use Config elsewhere
 
 def reset_and_create_tables():
     # ---- Connection details -------------------------------------------------

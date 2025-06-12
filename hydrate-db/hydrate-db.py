@@ -4,17 +4,29 @@ import pandas as pd
 import ast
 import re
 
-# ---------- Configuration ----------
+"""
+# 1. Sign in (use –p only if the account has a password)
+mysql -u root -p
+
+# 2. Create the database (replace myapp_db with your name)
+CREATE DATABASE myapp_db
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+# 3. Confirm
+SHOW DATABASES;
+"""
+
 DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'your_username',
-    'password': 'your_password',
-    'database': 'cookify_db',
+    'host': '127.0.0.1',
+    'user': 'root',
+    'password': 'password',
+    'database': 'cookify',
     'charset': 'utf8mb4',
     'use_unicode': True,
 }
 
-CSV_PATH = 'recipes.csv'  # adjust path to your CSV
+CSV_PATH = 'recipes.csv'
 
 # If your Image_Name should map to a URL/path, adjust this function:
 def make_image_url(image_name: str) -> str:
@@ -45,13 +57,12 @@ def parse_ingredient(ing_str: str):
         return None, None, ''
     parts = s.split(None, 1)
     if len(parts) == 1:
-        # no spaces
         return None, None, s
     qty_candidate, rest = parts
+
     # Basic check: qty_candidate contains digits or fractions?
     # We'll accept as quantity if it contains any digit or fraction char
     if re.search(r'[\d¼½¾⅓⅔–/]', qty_candidate):
-        # check unit
         subparts = rest.split(None, 1)
         token = subparts[0].lower().rstrip('.,')
         if token in COMMON_UNITS:
@@ -59,13 +70,11 @@ def parse_ingredient(ing_str: str):
             name = subparts[1].strip() if len(subparts) > 1 else ''
             return qty_candidate, unit, name
         else:
-            # no recognized unit: treat rest as name, qty as qty_candidate
             return qty_candidate, None, rest.strip()
     else:
-        # first token isn't a quantity: treat full as name
         return None, None, s
 
-# ---------- Main logic ----------
+
 def main():
     # 1. Connect to MySQL
     try:
@@ -80,7 +89,6 @@ def main():
         return
 
     cursor = conn.cursor(buffered=True)
-    # Cache for ingredient name -> Ingredient_ID
     ingredient_cache = {}
 
     # Pre-load existing Ingredients into cache
@@ -106,7 +114,6 @@ def main():
         image_name = row.get('Image_Name')
         image_url = make_image_url(image_name)
 
-        # Begin transaction for this recipe
         try:
             conn.start_transaction()
 
@@ -141,7 +148,6 @@ def main():
                 # Normalize ing_name for lookup: lowercase, strip
                 key = ing_name.lower()
                 if not key:
-                    # skip empty name
                     continue
 
                 # 3b.i. Get or create Ingredient_ID
@@ -166,7 +172,6 @@ def main():
                             ing_id = result[0]
                             ingredient_cache[key] = ing_id
                         else:
-                            # Unexpected: skip
                             print(f"Warning: could not insert or find ingredient '{ing_name}'")
                             continue
                     except Exception as e:
@@ -187,24 +192,73 @@ def main():
                         (recipe_id, ing_id, qty_val, unit_val, False)
                     )
                 except IntegrityError:
-                    # e.g., duplicate primary key (Recipe_ID, Ingredient_ID). Skip.
                     pass
+
                 except Exception as e:
                     print(f"Warning: could not insert recipe_ingredient for recipe {recipe_id}, ing {ing_id}: {e}")
 
-            # Commit this recipe’s inserts
             conn.commit()
             print(f"Inserted recipe '{name}' (ID={recipe_id}) with {len(ing_list)} ingredients")
 
         except Exception as e:
             conn.rollback()
             print(f"Error on recipe index {idx}, Title={name}: {e}")
-            # continue with next row
 
-    # Cleanup
     cursor.close()
     conn.close()
     print("Done.")
+
+def clean_database():
+    """
+    Connects to MySQL and drops all tables in cookify_db in the proper order.
+    Use with caution: this deletes all data and table definitions.
+    """
+    try:
+        conn = mysql.connector.connect(**DB_CONFIG)
+    except mysql.connector.Error as err:
+        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            print("Error: Invalid credentials")
+        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+            print("Error: Database does not exist")
+        else:
+            print("Connection error:", err)
+        return
+
+    cursor = conn.cursor()
+    try:
+        # Disable foreign key checks
+        cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
+
+        # Drop tables in dependency order
+        tables = [
+            "Recipe_Ingredients",
+            "CookList_Recipes",
+            "Recipe_Likes",
+            "CookList_Likes",
+            "User_Activities",
+            "CookLists",
+            "Ingredients",
+            "Recipes",
+            "Users",
+        ]
+        for tbl in tables:
+            try:
+                cursor.execute(f"DROP TABLE IF EXISTS `{tbl}`;")
+                print(f"Dropped table {tbl}")
+            except mysql.connector.Error as e:
+                print(f"Warning: could not drop {tbl}: {e}")
+
+        # Re-enable foreign key checks
+        cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
+        conn.commit()
+        print("Database cleaned: all Cookify tables dropped.")
+
+    except Exception as e:
+        conn.rollback()
+        print("Error during cleaning:", e)
+    finally:
+        cursor.close()
+        conn.close()
 
 if __name__ == "__main__":
     main()

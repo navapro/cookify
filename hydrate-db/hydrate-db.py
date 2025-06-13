@@ -3,6 +3,7 @@ from mysql.connector import errorcode, IntegrityError
 import pandas as pd
 import ast
 import re
+import random
 
 """
 # 1. Sign in (use –p only if the account has a password)
@@ -113,6 +114,21 @@ def main():
         instructions = row.get('Instructions')
         image_name = row.get('Image_Name')
         image_url = make_image_url(image_name)
+        top_5_cuisines = [
+            "American",
+            "Chinese",
+            "Italian",
+            "Greek",
+            "Indian",
+        ]
+        difficulty_levels = [
+            "Easy",
+            "Hard",
+            "Intermediate",
+        ]
+        difficulty =  random.choice(difficulty_levels)
+        cuisine =  random.choice(top_5_cuisines)
+        duration = random.randrange(10, 240 + 10, 10)
 
         try:
             conn.start_transaction()
@@ -120,10 +136,10 @@ def main():
             # 3a. Insert into Recipes.
             # We only supply Name, Instructions, Image_URL. The rest (Duration, Difficulty, Cuisine, Servings) default to NULL.
             insert_recipe_sql = """
-                INSERT INTO Recipes (Name, Instructions, Image_URL)
-                VALUES (%s, %s, %s)
+                INSERT INTO Recipes (Name, Duration, Difficulty, Cuisine, Instructions, Image_URL)
+                VALUES (%s, %s, %s, %s, %s, %s)
             """
-            cursor.execute(insert_recipe_sql, (name, instructions, image_url))
+            cursor.execute(insert_recipe_sql, (name, duration, difficulty, cuisine, instructions, image_url))
             recipe_id = cursor.lastrowid
 
             # 3b. Parse Cleaned_Ingredients: assume string representation of Python list
@@ -186,10 +202,10 @@ def main():
                     cursor.execute(
                         """
                         INSERT INTO Recipe_Ingredients
-                          (Recipe_ID, Ingredient_ID, Quantity, Unit, Is_Optional)
-                        VALUES (%s, %s, %s, %s, %s)
+                          (Recipe_ID, Ingredient_ID, Quantity, Unit)
+                        VALUES (%s, %s, %s, %s)
                         """,
-                        (recipe_id, ing_id, qty_val, unit_val, False)
+                        (recipe_id, ing_id, qty_val, unit_val)
                     )
                 except IntegrityError:
                     pass

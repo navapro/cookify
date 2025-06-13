@@ -4,6 +4,11 @@ import pandas as pd
 import ast
 import re
 import random
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).parent.parent))
+from config import Config
 
 """
 # 1. Sign in (use –p only if the account has a password)
@@ -18,11 +23,13 @@ CREATE DATABASE myapp_db
 SHOW DATABASES;
 """
 
+config = Config()
+
 DB_CONFIG = {
-    'host': '127.0.0.1',
-    'user': 'root',
-    'password': 'password',
-    'database': 'cookify',
+    'host': config.MYSQL_HOST,
+    'user': config.MYSQL_USER,
+    'password': config.MYSQL_PASSWORD,
+    'database': config.MYSQL_DB,
     'charset': 'utf8mb4',
     'use_unicode': True,
 }

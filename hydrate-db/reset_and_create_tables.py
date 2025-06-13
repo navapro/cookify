@@ -1,12 +1,21 @@
 import mysql.connector
+import sys
+from pathlib import Path
+
+# Add parent directory to path to import config.py
+sys.path.append(str(Path(__file__).parent.parent))
+from config import Config
 
 def reset_and_create_tables():
+    # Get configuration values from Config class
+    config = Config()
+    
     # ---- Connection details -------------------------------------------------
     DB_CONFIG = {
-        "host": "127.0.0.1",
-        "user": "root",
-        "password": "password",
-        "database": "cookify",
+        "host": config.MYSQL_HOST,
+        "user": config.MYSQL_USER,
+        "password": config.MYSQL_PASSWORD,
+        "database": config.MYSQL_DB,
         "charset": "utf8mb4",
         "use_unicode": True,
     }
@@ -140,10 +149,10 @@ def reset_and_create_tables():
         """)
 
         connection.commit()
-        print("✅ Database reset and tables recreated successfully!")
+        print("Database reset and tables recreated successfully!")
 
     except Exception as exc:
-        print("❌ Error while resetting/creating tables:")
+        print("Error while resetting/creating tables:")
         print(exc)
 
     finally:

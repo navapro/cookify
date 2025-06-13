@@ -7,9 +7,10 @@ load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 
 class Config:
     # Database configuration
+    # read from .env file
     MYSQL_HOST = os.getenv('MYSQL_HOST', 'localhost')
     MYSQL_USER = os.getenv('MYSQL_USER', 'root')
-    MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD', 'Judy@2004')  # This should be your actual password
+    MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD', 'Judy@2004')
     MYSQL_DB = os.getenv('MYSQL_DB', 'cookify')
     MYSQL_PORT = int(os.getenv('MYSQL_PORT', 3306))
 

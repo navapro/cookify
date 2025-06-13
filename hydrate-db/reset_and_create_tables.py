@@ -67,7 +67,6 @@ def reset_and_create_tables():
                 Difficulty VARCHAR(50),
                 Cuisine VARCHAR(100),
                 Instructions TEXT,
-                Recipe_Link VARCHAR(255),
                 Image_URL VARCHAR(255)
             )
         """)
@@ -76,10 +75,7 @@ def reset_and_create_tables():
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS Ingredients (
                 Ingredient_ID INT AUTO_INCREMENT PRIMARY KEY,
-                Name VARCHAR(255) NOT NULL,
-                Season VARCHAR(50),
-                Price FLOAT,
-                Nutritional_Info TEXT
+                Name VARCHAR(255) NOT NULL
             )
         """)
 
@@ -90,8 +86,6 @@ def reset_and_create_tables():
                 Ingredient_ID INT,
                 Quantity VARCHAR(100),
                 Unit VARCHAR(255),
-                Is_Optional VARCHAR(255),
-                Note TEXT,
                 PRIMARY KEY (Recipe_ID, Ingredient_ID),
                 FOREIGN KEY (Recipe_ID) REFERENCES Recipes(Recipe_ID),
                 FOREIGN KEY (Ingredient_ID) REFERENCES Ingredients(Ingredient_ID)

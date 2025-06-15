@@ -1,3 +1,5 @@
+# THIS FILE IS JUST TO TEST DATABASE CONNECTION
+
 import mysql.connector
 from mysql.connector import Error
 

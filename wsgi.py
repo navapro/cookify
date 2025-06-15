@@ -9,6 +9,14 @@ def create_app():
     
     # Initialize extensions
     db.init_app(app)
+
+    CORS(app, resources={
+        r"/api/*": {
+            "origins": ["http://localhost:8080", "http://localhost:5173", "http://127.0.0.1:8080", "http://127.0.0.1:5173"],
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"]
+        }
+    })
     
     # Import and register blueprints
     from routes.users import users_bp

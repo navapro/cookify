@@ -7,14 +7,27 @@ recipes_bp = Blueprint('recipes', __name__)
 @recipes_bp.route('/', methods=['GET'])
 def get_all_recipes():
     try:
-        result = db.session.execute(text("""
-            SELECT r.Recipe_ID, r.Name, r.Duration, r.Difficulty, r.Cuisine,
-                   GROUP_CONCAT(i.Name) as Ingredients
-            FROM Recipes r
-            LEFT JOIN Recipe_Ingredients ri ON r.Recipe_ID = ri.Recipe_ID
-            LEFT JOIN Ingredients i ON ri.Ingredient_ID = i.Ingredient_ID
-            GROUP BY r.Recipe_ID
-        """))
+        limit = int(request.args.get('limit', 10))
+        offset = int(request.args.get('offset', 0))
+
+        query = text(f"""
+            WITH RecipeData AS (
+                SELECT r.Recipe_ID, r.Name, r.Duration, r.Difficulty, r.Cuisine,
+                       i.Name AS Ingredient
+                FROM Recipes r
+                LEFT JOIN Recipe_Ingredients ri ON r.Recipe_ID = ri.Recipe_ID
+                LEFT JOIN Ingredients i ON ri.Ingredient_ID = i.Ingredient_ID
+            )
+            SELECT rd.Recipe_ID, rd.Name, rd.Duration, rd.Difficulty, rd.Cuisine,
+                   GROUP_CONCAT(rd.Ingredient) AS Ingredients
+            FROM RecipeData rd
+            GROUP BY rd.Recipe_ID
+            ORDER BY rd.Recipe_ID
+            LIMIT :limit OFFSET :offset
+        """)
+
+        result = db.session.execute(query, {"limit": limit, "offset": offset})
+
         recipes = []
         for row in result:
             recipes.append({
@@ -32,7 +45,6 @@ def get_all_recipes():
 @recipes_bp.route('/<int:recipe_id>', methods=['GET'])
 def get_recipe(recipe_id):
     try:
-        # Get recipe details
         result = db.session.execute(
             text("""
                 SELECT r.Recipe_ID, r.Name, r.Duration, r.Difficulty, r.Cuisine, r.Instructions,

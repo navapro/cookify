@@ -7,7 +7,7 @@ recipes_bp = Blueprint('recipes', __name__)
 @recipes_bp.route('/', methods=['GET'])
 def get_all_recipes():
     try:
-        limit = int(request.args.get('limit', 10))
+        limit = int(request.args.get('limit', 12))
         offset = int(request.args.get('offset', 0))
 
         query = text(f"""

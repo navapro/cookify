@@ -1,21 +1,41 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Plus, X, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
+import { createRecipe } from "@/services/api";
 interface CreateRecipeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 const cuisines = [
-  "Italian", "Mexican", "Chinese", "Indian", "French", 
-  "Japanese", "Thai", "Mediterranean", "American", "Korean", "British"
+  "Italian",
+  "Mexican",
+  "Chinese",
+  "Indian",
+  "French",
+  "Japanese",
+  "Thai",
+  "Mediterranean",
+  "American",
+  "Korean",
+  "British",
 ];
 
 const durations = [
@@ -27,13 +47,17 @@ const durations = [
   { label: "All Day (120+ min)", value: 120 },
 ];
 
-export const CreateRecipeDialog = ({ open, onOpenChange }: CreateRecipeDialogProps) => {
+export const CreateRecipeDialog = ({
+  open,
+  onOpenChange,
+}: CreateRecipeDialogProps) => {
   const [title, setTitle] = useState("");
   const [cuisine, setCuisine] = useState("");
   const [duration, setDuration] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [ingredients, setIngredients] = useState<string[]>([""]);
   const [instructions, setInstructions] = useState<string[]>([""]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   const handleAddIngredient = () => {
@@ -45,7 +69,7 @@ export const CreateRecipeDialog = ({ open, onOpenChange }: CreateRecipeDialogPro
   };
 
   const handleIngredientChange = (index: number, value: string) => {
-    const updated = ingredients.map((ing, i) => i === index ? value : ing);
+    const updated = ingredients.map((ing, i) => (i === index ? value : ing));
     setIngredients(updated);
   };
 
@@ -58,34 +82,65 @@ export const CreateRecipeDialog = ({ open, onOpenChange }: CreateRecipeDialogPro
   };
 
   const handleInstructionChange = (index: number, value: string) => {
-    const updated = instructions.map((inst, i) => i === index ? value : inst);
+    const updated = instructions.map((inst, i) => (i === index ? value : inst));
     setInstructions(updated);
   };
 
-  const handleSubmit = () => {
-    console.log("Creating recipe:", {
-      title,
+  const handleSubmit = async () => {
+    // Basic validation
+    if (!title.trim() || !cuisine || !duration) {
+      toast({
+        title: "Missing required fields",
+        description: "Please fill in title, cuisine, and duration.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    // Prepare payload
+    const filteredIngredients = ingredients.filter((ing) => ing.trim() !== "");
+    const filteredInstructions = instructions.filter(
+      (inst) => inst.trim() !== ""
+    );
+    // Join instructions into one string, e.g. newline-separated
+    const instructionsText = filteredInstructions.join("\n");
+    const payload = {
+      name: title.trim(),
       cuisine,
-      duration: parseInt(duration),
-      imageUrl,
-      ingredients: ingredients.filter(ing => ing.trim() !== ""),
-      instructions: instructions.filter(inst => inst.trim() !== "")
-    });
-    
-    // Show success toast
-    toast({
-      title: "Recipe Created Successfully! 🍳",
-      description: `"${title}" has been added to your collection. Gordon would be proud!`,
-    });
-    
-    // Reset form
-    setTitle("");
-    setCuisine("");
-    setDuration("");
-    setImageUrl("");
-    setIngredients([""]);
-    setInstructions([""]);
-    onOpenChange(false);
+      duration: parseInt(duration, 10),
+      instructions: instructionsText,
+      // If backend supports ingredients on creation, include here; otherwise omit or handle separately
+      // ingredients: filteredIngredients,
+      image_url: imageUrl.trim() || undefined,
+      recipe_link: undefined, // or set if you have a field for link
+    };
+
+    try {
+      const result = await createRecipe({ ...payload, difficulty: "Easy" });
+      const newId = result.recipe_id;
+      toast({
+        title: "Recipe Created!",
+        description: `"${title}" has been added (ID: ${newId}).`,
+      });
+      // Reset form
+      setTitle("");
+      setCuisine("");
+      setDuration("");
+      setImageUrl("");
+      setIngredients([""]);
+      setInstructions([""]);
+      onOpenChange(false);
+    } catch (err: any) {
+      toast({
+        title: "Error creating recipe",
+        description: err.message || "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -95,13 +150,17 @@ export const CreateRecipeDialog = ({ open, onOpenChange }: CreateRecipeDialogPro
           <DialogTitle className="text-2xl font-bold text-blue-800 flex items-center gap-2">
             🍳 Create Your Masterpiece
           </DialogTitle>
-          <p className="text-blue-600 italic">"Cooking is not about convenience" - Gordon Ramsay</p>
+          <p className="text-blue-600 italic">
+            "Cooking is not about convenience" - Gordon Ramsay
+          </p>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
           {/* Recipe Title */}
           <div className="space-y-2">
-            <Label htmlFor="title" className="text-blue-800 font-medium">Recipe Title</Label>
+            <Label htmlFor="title" className="text-blue-800 font-medium">
+              Recipe Title
+            </Label>
             <Input
               id="title"
               value={title}
@@ -111,18 +170,23 @@ export const CreateRecipeDialog = ({ open, onOpenChange }: CreateRecipeDialogPro
             />
           </div>
 
-          {/* Image Upload */}
+          {/* Image URL */}
           <div className="space-y-2">
-            <Label htmlFor="image" className="text-blue-800 font-medium">Recipe Image</Label>
+            <Label htmlFor="image" className="text-blue-800 font-medium">
+              Recipe Image URL
+            </Label>
             <div className="flex gap-2">
               <Input
                 id="image"
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="Enter image URL or upload..."
+                placeholder="Enter image URL..."
                 className="border-blue-200 focus:border-blue-400"
               />
-              <Button variant="outline" className="border-blue-200 hover:bg-blue-50">
+              <Button
+                variant="outline"
+                className="border-blue-200 hover:bg-blue-50"
+              >
                 <Upload className="w-4 h-4" />
               </Button>
             </div>
@@ -138,21 +202,27 @@ export const CreateRecipeDialog = ({ open, onOpenChange }: CreateRecipeDialogPro
                 </SelectTrigger>
                 <SelectContent>
                   {cuisines.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-blue-800 font-medium">Cooking Duration</Label>
+              <Label className="text-blue-800 font-medium">
+                Cooking Duration
+              </Label>
               <Select value={duration} onValueChange={setDuration}>
                 <SelectTrigger className="border-blue-200 focus:border-blue-400">
                   <SelectValue placeholder="Select duration..." />
                 </SelectTrigger>
                 <SelectContent>
                   {durations.map((d) => (
-                    <SelectItem key={d.value} value={d.value.toString()}>{d.label}</SelectItem>
+                    <SelectItem key={d.value} value={d.value.toString()}>
+                      {d.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -179,7 +249,9 @@ export const CreateRecipeDialog = ({ open, onOpenChange }: CreateRecipeDialogPro
                 <div key={index} className="flex gap-2">
                   <Input
                     value={ingredient}
-                    onChange={(e) => handleIngredientChange(index, e.target.value)}
+                    onChange={(e) =>
+                      handleIngredientChange(index, e.target.value)
+                    }
                     placeholder="Enter ingredient..."
                     className="border-blue-200 focus:border-blue-400"
                   />
@@ -202,7 +274,9 @@ export const CreateRecipeDialog = ({ open, onOpenChange }: CreateRecipeDialogPro
           {/* Instructions */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="text-blue-800 font-medium">Cooking Instructions</Label>
+              <Label className="text-blue-800 font-medium">
+                Cooking Instructions
+              </Label>
               <Button
                 type="button"
                 variant="outline"
@@ -220,8 +294,12 @@ export const CreateRecipeDialog = ({ open, onOpenChange }: CreateRecipeDialogPro
                   <div className="flex-1">
                     <Textarea
                       value={instruction}
-                      onChange={(e) => handleInstructionChange(index, e.target.value)}
-                      placeholder={`Step ${index + 1}: Describe this cooking step...`}
+                      onChange={(e) =>
+                        handleInstructionChange(index, e.target.value)
+                      }
+                      placeholder={`Step ${
+                        index + 1
+                      }: Describe this cooking step...`}
                       className="border-blue-200 focus:border-blue-400 min-h-[60px]"
                     />
                   </div>
@@ -245,15 +323,16 @@ export const CreateRecipeDialog = ({ open, onOpenChange }: CreateRecipeDialogPro
           <div className="flex gap-2 pt-4">
             <Button
               onClick={handleSubmit}
-              disabled={!title || !cuisine || !duration}
+              disabled={!title || !cuisine || !duration || isSubmitting}
               className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
             >
-              Create Recipe
+              {isSubmitting ? "Creating..." : "Create Recipe"}
             </Button>
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
               className="border-blue-200 hover:bg-blue-50"
+              disabled={isSubmitting}
             >
               Cancel
             </Button>

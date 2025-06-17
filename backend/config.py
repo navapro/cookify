@@ -20,3 +20,7 @@ class Config:
     # SQLAlchemy configuration
     SQLALCHEMY_DATABASE_URI = f'mysql://{MYSQL_USER}:{encoded_password}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # JWT Configuration
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'your-secret-key-replace-me') # Change this in .env for production
+    JWT_ACCESS_TOKEN_EXPIRES = 3600  # Token expires in 1 hour (3600 seconds)

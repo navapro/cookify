@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, BookOpen, User } from "lucide-react";
+import { Plus, BookOpen, User, LogOut } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -30,6 +29,11 @@ const sidebarItems = [
     icon: User,
     action: "my-profile",
   },
+  {
+    title: "Logout",
+    icon: LogOut,
+    action: "logout",
+  },
 ];
 
 export function AppSidebar() {
@@ -46,6 +50,9 @@ export function AppSidebar() {
       setCreateRecipeDialogOpen(true);
     } else if (action === "my-profile") {
       navigate("/profile");
+    } else if (action === "logout") {
+      localStorage.removeItem('access_token');
+      navigate('/login');
     }
   };
 

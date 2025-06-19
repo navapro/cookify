@@ -15,11 +15,13 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  level: number;
+  points: number;
+  level: string;
 }
 
 export interface UserStats {
-  cookify_level: number;
+  points: number;
+  cookify_level: string;
   recipes_created: number;
   cooklists_created: number;
 }

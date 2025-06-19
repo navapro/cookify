@@ -24,8 +24,8 @@ CREATE TABLE Users (
   Password VARCHAR(255) NOT NULL, -- For hashed passwords (bcrypt needs ~60 chars)
   Date_of_Birth DATE,
   Profile_Image VARCHAR(255), -- Store file path/URL
-  Cookify_Level INT DEFAULT 0,
   Points INT DEFAULT 0,
+  Cookify_Level VARCHAR(50) DEFAULT '🐀 Street Rat',
   Created_At DATETIME DEFAULT CURRENT_TIMESTAMP,
   Updated_At DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -114,7 +114,7 @@ CREATE TABLE CookList_Likes (
 CREATE TABLE User_Activities (
   Activity_ID INT AUTO_INCREMENT PRIMARY KEY,
   User_ID INT NOT NULL,
-  Activity_Type ENUM('recipe_liked', 'recipe_cooked', 'cooklist_created', 'cooklist_shared'),
+  Activity_Type ENUM('recipe_created', 'recipe_liked', 'recipe_cooked', 'cooklist_created', 'cooklist_shared', 'recipe_rated', 'recipe_commented'),
   Points_Earned INT DEFAULT 0,
   Activity_Date DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE
@@ -133,11 +133,11 @@ CREATE INDEX idx_cooklist_likes_cooklist ON CookList_Likes(CookList_ID);
 -- Insert sample data for testing
 -- Sample users with different levels
 INSERT INTO Users (Name, Email, Password, Date_of_Birth, Points, Cookify_Level) VALUES
-('Alice Chef', 'alice@cookify.com', '$2b$10$hashedpassword1', '1995-03-15', 45, 4),
-('Bob Novice', 'bob@cookify.com', '$2b$10$hashedpassword2', '1988-07-22', 8, 2),
-('Carol Expert', 'carol@cookify.com', '$2b$10$hashedpassword3', '1992-11-03', 150, 6),
-('Dave Beginner', 'dave@cookify.com', '$2b$10$hashedpassword4', '1990-05-18', 2, 1),
-('Emma Master', 'emma@cookify.com', '$2b$10$hashedpassword5', '1985-12-08', 350, 8);
+('Alice Chef', 'alice@cookify.com', '$2b$10$hashedpassword1', '1995-03-15', 45, '🏠 Restaurant Owner'),
+('Bob Novice', 'bob@cookify.com', '$2b$10$hashedpassword2', '1988-07-22', 8, '🐀 Street Rat'),
+('Carol Expert', 'carol@cookify.com', '$2b$10$hashedpassword3', '1992-11-03', 150, '👑🐭 Remy the Rat'),
+('Dave Beginner', 'dave@cookify.com', '$2b$10$hashedpassword4', '1990-05-18', 2, '🐀 Street Rat'),
+('Emma Master', 'emma@cookify.com', '$2b$10$hashedpassword5', '1985-12-08', 350, '👑🐭 Remy the Rat');
 
 -- Sample ingredients organized by category
 INSERT INTO Ingredients (Name, Season, Price, Category) VALUES
@@ -281,6 +281,40 @@ INSERT INTO User_Activities (User_ID, Activity_Type, Points_Earned) VALUES
 (3, 'recipe_cooked', 20),
 (4, 'recipe_liked', 5),
 (5, 'recipe_cooked', 25);
+
+-- Create trigger to update user level based on points
+DELIMITER //
+CREATE TRIGGER update_user_level
+AFTER UPDATE ON Users
+FOR EACH ROW
+BEGIN
+    IF NEW.Points != OLD.Points THEN
+        SET NEW.Cookify_Level = CASE
+            WHEN NEW.Points >= 500 THEN '👑🐭 Remy the Rat'
+            WHEN NEW.Points >= 301 THEN '🔥 Gordon Ramsey'
+            WHEN NEW.Points >= 201 THEN '🏠 Restaurant Owner'
+            WHEN NEW.Points >= 101 THEN '👨‍🍳 Chef de Cuisine'
+            WHEN NEW.Points >= 51 THEN '🧂 Sous Chef'
+            WHEN NEW.Points >= 26 THEN '🧑‍🍳 Commis Chef'
+            WHEN NEW.Points >= 11 THEN '🔪 Prep Cook'
+            WHEN NEW.Points >= 2 THEN '🧽 Dishwasher'
+            ELSE '🐀 Street Rat'
+        END;
+    END IF;
+END //
+DELIMITER ;
+
+-- Create trigger to update user points when activity is added
+DELIMITER //
+CREATE TRIGGER update_user_points
+AFTER INSERT ON User_Activities
+FOR EACH ROW
+BEGIN
+    UPDATE Users 
+    SET Points = Points + NEW.Points_Earned
+    WHERE User_ID = NEW.User_ID;
+END //
+DELIMITER ;
 
 -- Display success message and basic stats
 SELECT 'Database setup complete!' as Status;

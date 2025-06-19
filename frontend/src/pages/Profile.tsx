@@ -163,7 +163,8 @@ const Profile = () => {
           console.error("Failed to fetch user stats:", error);
           // Set default values if API fails
           setUserStats({
-            cookify_level: 1,
+            points: 0,
+            cookify_level: "🐀 Street Rat",
             recipes_created: 0,
             cooklists_created: 0
           });
@@ -190,20 +191,31 @@ const Profile = () => {
     setSelectedCookList(cookList);
   };
 
-  // Chef level calculation based on points (Cookify Level)
-  const getChefLevel = (points: number) => {
-    if (points >= 500) return { level: "👑🐭 Remy the Rat", color: "text-purple-600", bgColor: "bg-purple-100" };
-    if (points >= 301) return { level: "🔥 Gordon Ramsey", color: "text-red-600", bgColor: "bg-red-100" };
-    if (points >= 201) return { level: "🏠 Restaurant Owner", color: "text-orange-600", bgColor: "bg-orange-100" };
-    if (points >= 101) return { level: "👨‍🍳 Chef de Cuisine", color: "text-yellow-600", bgColor: "bg-yellow-100" };
-    if (points >= 51) return { level: "🧂 Sous Chef", color: "text-green-600", bgColor: "bg-green-100" };
-    if (points >= 26) return { level: "🧑‍🍳 Commis Chef", color: "text-blue-600", bgColor: "bg-blue-100" };
-    if (points >= 11) return { level: "🔪 Prep Cook", color: "text-indigo-600", bgColor: "bg-indigo-100" };
-    if (points >= 2) return { level: "🧽 Dishwasher", color: "text-gray-600", bgColor: "bg-gray-100" };
-    return { level: "🐀 Street Rat", color: "text-gray-500", bgColor: "bg-gray-50" };
+  // Chef level styling based on level title
+  const getChefLevelStyle = (level: string) => {
+    switch (level) {
+      case "👑🐭 Remy the Rat":
+        return { color: "text-purple-600", bgColor: "bg-purple-100" };
+      case "🔥 Gordon Ramsey":
+        return { color: "text-red-600", bgColor: "bg-red-100" };
+      case "🏠 Restaurant Owner":
+        return { color: "text-orange-600", bgColor: "bg-orange-100" };
+      case "👨‍🍳 Chef de Cuisine":
+        return { color: "text-yellow-600", bgColor: "bg-yellow-100" };
+      case "🧂 Sous Chef":
+        return { color: "text-green-600", bgColor: "bg-green-100" };
+      case "🧑‍🍳 Commis Chef":
+        return { color: "text-blue-600", bgColor: "bg-blue-100" };
+      case "🔪 Prep Cook":
+        return { color: "text-indigo-600", bgColor: "bg-indigo-100" };
+      case "🧽 Dishwasher":
+        return { color: "text-gray-600", bgColor: "bg-gray-100" };
+      default: // 🐀 Street Rat
+        return { color: "text-gray-500", bgColor: "bg-gray-50" };
+    }
   };
 
-  const chefLevel = getChefLevel(userStats?.cookify_level || 0);
+  const chefLevelStyle = getChefLevelStyle(userStats?.cookify_level || "🐀 Street Rat");
 
   if (loading) {
     return (
@@ -249,17 +261,18 @@ const Profile = () => {
                   <div>
                     <h2 className="text-2xl font-bold text-blue-800">Chef {userName}</h2>
                     <p className="text-blue-600 italic">"Anyone can cook, but only the fearless can be great!"</p>
-                    <div className={`inline-flex items-center gap-2 mt-2 px-3 py-1 rounded-full ${chefLevel.bgColor}`}>
+                    <div className={`inline-flex items-center gap-2 mt-2 px-3 py-1 rounded-full ${chefLevelStyle.bgColor}`}>
                       <Award className="w-4 h-4" />
-                      <span className={`text-sm font-medium ${chefLevel.color}`}>{chefLevel.level}</span>
+                      <span className={`text-sm font-medium ${chefLevelStyle.color}`}>{userStats?.cookify_level}</span>
                     </div>
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                    <div className="text-2xl font-bold text-blue-700">{userStats?.cookify_level || 1}</div>
-                    <div className="text-blue-600 text-sm">Cookify Level</div>
+                    <div className="text-2xl font-bold text-blue-700">{userStats?.cookify_level || "🐀 Street Rat"}</div>
+                    <div className="text-blue-600 text-sm">Chef Level</div>
+                    <div className="text-sm text-blue-500 mt-1">{userStats?.points || 0} points</div>
                   </div>
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
                     <div className="text-2xl font-bold text-blue-700">{userStats?.recipes_created || 0}</div>

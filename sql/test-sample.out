@@ -1,0 +1,28 @@
+-- Query 1: Check if email exists (should return empty for new email)
+Empty set (0.00 sec)
+
+-- Query 2: Insert new user (successful)
+Query OK, 1 row affected (0.01 sec)
+
+-- Query 3: Verify user creation
++--------+----------+---------------------+--------------+---------------------+
+|User_ID | Name     | Email               | Cookify_Level| Created_At          |
++--------+----------+---------------------+--------------+---------------------+
+|      1 | John Doe | john.doe@email.com  | 🐀 Street Rat| 2025-06-19 10:30:00 |
++--------+----------+---------------------+--------------+---------------------+
+1 row in set (0.00 sec)
+
+-- Query 4: Duplicate email test (should fail)
+ERROR 1062 (23000): Duplicate entry 'john.doe@email.com' for key 'Email'
+
+-- Query 5: Create second user (successful)
+Query OK, 1 row affected (0.01 sec)
+
+-- Query 6: View all users
++--------+------------+------------------------+--------------+---------------------+
+|User_ID | Name       | Email                  | Cookify_Level| Created_At          |
++--------+------------+------------------------+--------------+---------------------+
+|      2 | Sarah Chef | sarah.chef@email.com   | 🐀 Street Rat| 2025-06-19 10:35:00 |
+|      1 | John Doe   | john.doe@email.com     | 🐀 Street Rat| 2025-06-19 10:30:00 |
++--------+------------+------------------------+--------------+---------------------+
+2 rows in set (0.00 sec) 

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { RecipeCard } from "@/components/RecipeCard";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { getUser } from "@/utils/auth";
 
 // Mock data - in a real app this would come from a database
 const mockCookLists = [
@@ -144,6 +145,10 @@ const myRecipes = [
 const Profile = () => {
   const navigate = useNavigate();
   const [selectedCookList, setSelectedCookList] = useState<typeof mockCookLists[0] | null>(null);
+  
+  // Get the current user's information
+  const currentUser = getUser();
+  const userName = currentUser?.name || "Chef";
 
   const handleBackClick = () => {
     if (selectedCookList) {
@@ -202,7 +207,7 @@ const Profile = () => {
                     <ChefHat className="w-8 h-8 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-blue-800">Chef Linguini</h2>
+                    <h2 className="text-2xl font-bold text-blue-800">Chef {userName}</h2>
                     <p className="text-blue-600 italic">"Anyone can cook, but only the fearless can be great!"</p>
                     <div className={`inline-flex items-center gap-2 mt-2 px-3 py-1 rounded-full ${chefLevel.bgColor}`}>
                       <Award className="w-4 h-4" />

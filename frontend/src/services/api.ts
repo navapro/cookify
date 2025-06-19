@@ -44,6 +44,23 @@ export const login = async (email: string, password: string) => {
   return response.json();
 };
 
+export const register = async (name: string, email: string, password: string) => {
+  const response = await fetch(`${API_BASE_URL}/users/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ name, email, password }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Registration failed");
+  }
+
+  return response.json();
+};
+
 // Recipes
 export const getRecipes = async () => {
   const response = await fetch(`${API_BASE_URL}/recipes/`);

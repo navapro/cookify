@@ -5,25 +5,47 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { login } from "@/services/api";
+import { register } from "@/services/api";
 import { setAuthData } from "@/utils/auth";
 
-const Login = () => {
+const Register = () => {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simple validation
-    if (!email.trim() || !password.trim()) {
+    // Validation
+    if (!name.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
       toast({
         title: "Error",
-        description: "Please enter both email and password",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters long",
         variant: "destructive",
       });
       setIsLoading(false);
@@ -31,21 +53,21 @@ const Login = () => {
     }
 
     try {
-      const response = await login(email, password);
+      const data = await register(name, email, password);
       
       // Store the access token and user data
-      setAuthData(response.access_token, response.user);
+      setAuthData(data.access_token, { id: data.id, name, email });
       
       toast({
         title: "Welcome to Cookify!",
-        description: `Successfully logged in as ${response.user.name}`,
+        description: `Account created successfully for ${name}`,
       });
       
       navigate("/");
     } catch (error) {
       toast({
-        title: "Login Failed",
-        description: error instanceof Error ? error.message : "Invalid email or password",
+        title: "Registration Failed",
+        description: error instanceof Error ? error.message : "Failed to create account",
         variant: "destructive",
       });
     } finally {
@@ -62,11 +84,26 @@ const Login = () => {
         <CardHeader className="text-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
           <CardTitle className="text-3xl font-bold">🍳 Cookify</CardTitle>
           <CardDescription className="text-blue-100">
-            "Yes Chef!" meets "Anyone can cook"
+            Join the culinary adventure
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6 space-y-4">
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-blue-800 font-medium">
+                Full Name
+              </Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="Enter your full name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="border-blue-200 focus:border-blue-500"
+                disabled={isLoading}
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="email" className="text-blue-800 font-medium">
                 Email
@@ -96,22 +133,35 @@ const Login = () => {
                 disabled={isLoading}
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword" className="text-blue-800 font-medium">
+                Confirm Password
+              </Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="Confirm your password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="border-blue-200 focus:border-blue-500"
+                disabled={isLoading}
+              />
+            </div>
             
             <Button
               type="submit"
               className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-2"
               disabled={isLoading}
             >
-              {isLoading ? "Signing In..." : "Sign In"}
+              {isLoading ? "Creating Account..." : "Create Account"}
             </Button>
           </form>
           
           <div className="text-center text-sm text-blue-600 mt-4">
-            <p>Enter your email and password to access Cookify</p>
-            <p className="mt-2">
-              Don't have an account?{" "}
-              <Link to="/register" className="font-medium hover:underline">
-                Sign up here
+            <p>Already have an account?{" "}
+              <Link to="/login" className="font-medium hover:underline">
+                Sign in here
               </Link>
             </p>
           </div>
@@ -121,4 +171,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register; 

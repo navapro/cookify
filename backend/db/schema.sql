@@ -7,6 +7,7 @@ USE cookify_db;
 
 -- Drop tables if they exist (for clean slate)
 DROP TABLE IF EXISTS User_Activities;
+DROP TABLE IF EXISTS Cooklist_Creates;
 DROP TABLE IF EXISTS CookList_Likes;
 DROP TABLE IF EXISTS Recipe_Likes;
 DROP TABLE IF EXISTS CookList_Recipes;
@@ -110,7 +111,17 @@ CREATE TABLE CookList_Likes (
   FOREIGN KEY (CookList_ID) REFERENCES CookLists(CookList_ID) ON DELETE CASCADE
 );
 
--- 9. User Activity Table - Track actions for leveling system
+-- 9. CookList Creates Table - Who created the cook list?
+CREATE TABLE CookList_Creates (
+  User_ID INT NOT NULL,
+  CookList_ID INT NOT NULL,
+  Created_At DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (User_ID, CookList_ID),
+  FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE,
+  FOREIGN KEY (CookList_ID) REFERENCES CookLists(CookList_ID) ON DELETE CASCADE
+);
+
+-- 10. User Activity Table - Track actions for leveling system
 CREATE TABLE User_Activities (
   Activity_ID INT AUTO_INCREMENT PRIMARY KEY,
   User_ID INT NOT NULL,
@@ -270,6 +281,13 @@ INSERT INTO CookList_Likes (User_ID, CookList_ID) VALUES
 (1, 3), -- Alice likes Italian Classics
 (3, 5), -- Carol likes Master Chef Challenge
 (2, 4); -- Bob likes Learning to Cook
+
+INSERT INTO CookList_Creates(User_ID, CookList_ID) VALUES
+(1, 1),
+(2, 2),
+(1, 3),
+(4, 4),
+(3, 5);
 
 -- Add some activity tracking for the leveling system
 INSERT INTO User_Activities (User_ID, Activity_Type, Points_Earned) VALUES

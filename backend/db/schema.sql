@@ -1,5 +1,4 @@
 -- Cookify Database Schema - Complete Implementation
--- Replace your existing schema.sql with this file
 
 -- Create database if it doesn't exist
 CREATE DATABASE IF NOT EXISTS cookify_db;
@@ -69,7 +68,7 @@ CREATE TABLE Recipe_Ingredients (
   FOREIGN KEY (Ingredient_ID) REFERENCES Ingredients(Ingredient_ID)
 );
 
--- 5. Cook Lists Table - User's recipe collections (like Spotify playlists)
+-- 5. Cook Lists Table - User's recipe collections 
 CREATE TABLE CookLists (
   CookList_ID INT AUTO_INCREMENT PRIMARY KEY,
   User_ID INT NOT NULL,
@@ -111,7 +110,7 @@ CREATE TABLE CookList_Likes (
   FOREIGN KEY (CookList_ID) REFERENCES CookLists(CookList_ID) ON DELETE CASCADE
 );
 
--- 9. CookList Creates Table - Who created the cook list?
+-- 9. CookList Creates Table - Who created the cook list
 CREATE TABLE CookList_Creates (
   User_ID INT NOT NULL,
   CookList_ID INT NOT NULL,
@@ -195,8 +194,9 @@ INSERT INTO Recipes (Name, Duration, Difficulty, Cuisine, Instructions, Servings
 ('Beef Stir Fry', 15, 'Medium', 'Asian', 'Cut beef into strips. Stir fry with vegetables and soy sauce over high heat.', 4, '/images/beef-stirfry.jpg'),
 ('Gordon Ramsay Beef Wellington', 180, 'Hard', 'British', 'Sear beef, wrap in pâté and pastry. Bake until golden. Advanced technique required.', 6, '/images/beef-wellington.jpg');
 
--- Link recipes to ingredients (the crucial many-to-many relationships)
+-- Link recipes to ingredients
 INSERT INTO Recipe_Ingredients (Recipe_ID, Ingredient_ID, Quantity, Unit) VALUES
+
 -- Classic Spaghetti Carbonara (Recipe_ID = 1)
 (1, 16, '400', 'grams'),     -- Pasta
 (1, 4, '3', 'large'),        -- Eggs
@@ -225,7 +225,7 @@ INSERT INTO Recipe_Ingredients (Recipe_ID, Ingredient_ID, Quantity, Unit) VALUES
 (4, 7, '3', 'cloves'),       -- Garlic
 (4, 22, '2', 'tablespoons'), -- Olive Oil
 
--- Beef Wellington (Recipe_ID = 5) - Gordon Ramsay level!
+-- Beef Wellington (Recipe_ID = 5)
 (5, 2, '1', 'kg'),           -- Ground Beef (substitute for beef tenderloin)
 (5, 7, '6', 'cloves'),       -- Garlic
 (5, 21, '4', 'tablespoons'), -- Butter

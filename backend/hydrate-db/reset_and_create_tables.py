@@ -105,12 +105,14 @@ def reset_and_create_tables():
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS CookList (
                 CookList_ID INT AUTO_INCREMENT PRIMARY KEY,
-                User_ID INT,
-                Name VARCHAR(255) NOT NULL,
+                User_ID INT NOT NULL,
+                Name VARCHAR(100) NOT NULL,
                 Description TEXT,
+                Is_Public BOOLEAN DEFAULT TRUE,
                 Created_At DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (User_ID) REFERENCES Users(User_ID)
-            )
+                Updated_At DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE
+            );
         """)
 
         # CookList_Recipes

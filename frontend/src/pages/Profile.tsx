@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, ChefHat, Clock, Globe, Award } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { RecipeCard } from "@/components/RecipeCard";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { getUser } from "@/utils/auth";
+import { getUserStats, type UserStats } from "@/services/api";
 
 // Mock data - in a real app this would come from a database
 const mockCookLists = [
@@ -145,10 +146,37 @@ const myRecipes = [
 const Profile = () => {
   const navigate = useNavigate();
   const [selectedCookList, setSelectedCookList] = useState<typeof mockCookLists[0] | null>(null);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [loading, setLoading] = useState(true);
   
   // Get the current user's information
   const currentUser = getUser();
   const userName = currentUser?.name || "Chef";
+
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      if (currentUser?.id) {
+        try {
+          const stats = await getUserStats(currentUser.id);
+          setUserStats(stats);
+        } catch (error) {
+          console.error("Failed to fetch user stats:", error);
+          // Set default values if API fails
+          setUserStats({
+            cookify_level: 1,
+            recipes_created: 0,
+            cooklists_created: 0
+          });
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+      }
+    };
+
+    fetchUserStats();
+  }, [currentUser?.id]);
 
   const handleBackClick = () => {
     if (selectedCookList) {
@@ -162,16 +190,28 @@ const Profile = () => {
     setSelectedCookList(cookList);
   };
 
-  // Chef level calculation based on recipes created
-  const getChefLevel = (recipeCount: number) => {
-    if (recipeCount >= 50) return { level: "Master Chef", color: "text-purple-600", bgColor: "bg-purple-100" };
-    if (recipeCount >= 30) return { level: "Expert Chef", color: "text-gold-600", bgColor: "bg-yellow-100" };
-    if (recipeCount >= 15) return { level: "Skilled Chef", color: "text-orange-600", bgColor: "bg-orange-100" };
-    if (recipeCount >= 5) return { level: "Home Chef", color: "text-green-600", bgColor: "bg-green-100" };
-    return { level: "Beginner", color: "text-blue-600", bgColor: "bg-blue-100" };
+  // Chef level calculation based on points (Cookify Level)
+  const getChefLevel = (points: number) => {
+    if (points >= 500) return { level: "👑🐭 Remy the Rat", color: "text-purple-600", bgColor: "bg-purple-100" };
+    if (points >= 301) return { level: "🔥 Gordon Ramsey", color: "text-red-600", bgColor: "bg-red-100" };
+    if (points >= 201) return { level: "🏠 Restaurant Owner", color: "text-orange-600", bgColor: "bg-orange-100" };
+    if (points >= 101) return { level: "👨‍🍳 Chef de Cuisine", color: "text-yellow-600", bgColor: "bg-yellow-100" };
+    if (points >= 51) return { level: "🧂 Sous Chef", color: "text-green-600", bgColor: "bg-green-100" };
+    if (points >= 26) return { level: "🧑‍🍳 Commis Chef", color: "text-blue-600", bgColor: "bg-blue-100" };
+    if (points >= 11) return { level: "🔪 Prep Cook", color: "text-indigo-600", bgColor: "bg-indigo-100" };
+    if (points >= 2) return { level: "🧽 Dishwasher", color: "text-gray-600", bgColor: "bg-gray-100" };
+    return { level: "🐀 Street Rat", color: "text-gray-500", bgColor: "bg-gray-50" };
   };
 
-  const chefLevel = getChefLevel(23);
+  const chefLevel = getChefLevel(userStats?.cookify_level || 0);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-blue-600 text-lg font-medium">Loading profile...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-indigo-50 relative">
@@ -218,16 +258,16 @@ const Profile = () => {
                 
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                    <div className="text-2xl font-bold text-blue-700">23</div>
+                    <div className="text-2xl font-bold text-blue-700">{userStats?.cookify_level || 1}</div>
+                    <div className="text-blue-600 text-sm">Cookify Level</div>
+                  </div>
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <div className="text-2xl font-bold text-blue-700">{userStats?.recipes_created || 0}</div>
                     <div className="text-blue-600 text-sm">Recipes Created</div>
                   </div>
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                    <div className="text-2xl font-bold text-blue-700">4</div>
+                    <div className="text-2xl font-bold text-blue-700">{userStats?.cooklists_created || 0}</div>
                     <div className="text-blue-600 text-sm">Cook Lists</div>
-                  </div>
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                    <div className="text-2xl font-bold text-blue-700">156</div>
-                    <div className="text-blue-600 text-sm">Meals Cooked</div>
                   </div>
                 </div>
               </div>

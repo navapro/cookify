@@ -18,6 +18,12 @@ export interface User {
   level: number;
 }
 
+export interface UserStats {
+  cookify_level: number;
+  recipes_created: number;
+  cooklists_created: number;
+}
+
 export interface CookList {
   id: number;
   name: string;
@@ -56,6 +62,29 @@ export const register = async (name: string, email: string, password: string) =>
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || "Registration failed");
+  }
+
+  return response.json();
+};
+
+// User Statistics
+export const getUserStats = async (userId: number): Promise<UserStats> => {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/stats`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to fetch user stats");
   }
 
   return response.json();

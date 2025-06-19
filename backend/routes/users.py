@@ -39,6 +39,47 @@ def get_user(user_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@users_bp.route('/<int:user_id>/stats', methods=['GET'])
+@jwt_required()
+def get_user_stats(user_id):
+    current_user_id = get_jwt_identity()
+    if current_user_id != user_id:
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    try:
+        # Get user's cookify level
+        user_result = db.session.execute(
+            text("SELECT Cookify_Level FROM Users WHERE User_ID = :id"),
+            {"id": current_user_id}
+        )
+        user = user_result.fetchone()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+        
+        cookify_level = user[0]
+
+        # Count recipes created by user (assuming recipes have a User_ID field)
+        # For now, we'll count all recipes since the current schema doesn't track recipe ownership
+        recipe_count_result = db.session.execute(
+            text("SELECT COUNT(*) FROM Recipes")
+        )
+        recipe_count = recipe_count_result.fetchone()[0]
+
+        # Count cooklists created by user
+        cooklist_count_result = db.session.execute(
+            text("SELECT COUNT(*) FROM CookList WHERE User_ID = :user_id"),
+            {"user_id": current_user_id}
+        )
+        cooklist_count = cooklist_count_result.fetchone()[0]
+
+        return jsonify({
+            "cookify_level": cookify_level,
+            "recipes_created": recipe_count,
+            "cooklists_created": cooklist_count
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @users_bp.route('/', methods=['POST'])
 def create_user():
     try:

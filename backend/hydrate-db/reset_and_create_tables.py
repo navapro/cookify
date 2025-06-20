@@ -7,10 +7,8 @@ sys.path.append(str(Path(__file__).parent.parent))
 from config import Config
 
 def reset_and_create_tables():
-    # Get configuration values from Config class
     config = Config()
-    
-    # ---- Connection details -------------------------------------------------
+
     DB_CONFIG = {
         "host": config.MYSQL_HOST,
         "user": config.MYSQL_USER,
@@ -20,7 +18,6 @@ def reset_and_create_tables():
         "use_unicode": True,
     }
 
-    # ---- All table names (one place!) ---------------------------------------
     tables = [
         "CookList",
         "CookList_Likes",
@@ -35,24 +32,14 @@ def reset_and_create_tables():
     connection = None
     cursor = None
     try:
-        # ---------------------------------------------------------------------
-        # Connect
-        # ---------------------------------------------------------------------
         connection = mysql.connector.connect(**DB_CONFIG)
         cursor = connection.cursor()
 
-        # ---------------------------------------------------------------------
-        # DROP every existing table
-        # ---------------------------------------------------------------------
         cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
-        for tbl in sorted(tables):          # alphabetical order
+        for tbl in sorted(tables):  # alphabetical order
             cursor.execute(f"DROP TABLE IF EXISTS {tbl};")
         cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
         connection.commit()
-
-        # ---------------------------------------------------------------------
-        # Re-create schema
-        # ---------------------------------------------------------------------
 
         # Users
         cursor.execute("""
@@ -77,7 +64,9 @@ def reset_and_create_tables():
                 Difficulty VARCHAR(50),
                 Cuisine VARCHAR(100),
                 Instructions TEXT,
-                Image_URL VARCHAR(255)
+                Image_URL VARCHAR(255),
+                User_ID INT,
+                FOREIGN KEY (User_ID) REFERENCES Users(User_ID)
             )
         """)
 
@@ -102,7 +91,7 @@ def reset_and_create_tables():
             )
         """)
 
-        # CookList
+        # CookLists
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS CookLists (
                 CookList_ID INT AUTO_INCREMENT PRIMARY KEY,
@@ -165,8 +154,5 @@ def reset_and_create_tables():
             connection.close()
             print("Database connection closed.")
 
-# ---------------------------------------------------------------------------
-# Run directly
-# ---------------------------------------------------------------------------
 if __name__ == "__main__":
     reset_and_create_tables()

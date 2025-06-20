@@ -1,3 +1,4 @@
+-- Feature 1: User Creation
 -- Test queries for user profile creation feature
 
 -- 1. Check if email already exists (validation query)
@@ -23,7 +24,40 @@ VALUES ('Sarah Chef', 'sarah.chef@email.com', '$2b$12$sarah_hashed_password', 'ð
 -- 6. View all created users
 SELECT User_ID, Name, Email, Cookify_Level, Created_At FROM Users ORDER BY Created_At DESC; 
 
+-- feature 2: searching for recipes
+-- adding more recipes
+INSERT INTO Recipes (User_ID, Name, Duration, Difficulty, Cuisine, Instructions, Servings, Image_URL) VALUES
+(1, 'Rosemary Focaccia', 120, 'Medium', 'Italian', 'cook good. good cook.', 1, 'very real link'),
+(1, 'Tamagoyaki', 15, 'Medium', 'Japanese', 'also cook good. please.', 3, 'slightly real link'),
+(2, 'Okonomiyaki', 30, 'Medium', 'Japanese', 'cook good (optional)', 12, 'very fake link'),
+(3, 'Fried Rice', 15, 'Easy', 'Chinese', 'a (blank) fried this rice!?!?!?', 1, 'very real link'),
+(4, 'Croissants', 300, 'Hard', 'French', 'hon hon hon', 6, 'very real link');
 
+-- selecting with parameters:
+--      Duration: < 30 minutes
+SELECT r.Recipe_ID, r.User_ID, r.Name, r.Duration, r.Difficulty, r.Cuisine, r.Instructions
+FROM Recipes r
+WHERE r.duration < 30;
+
+-- selecting with parameters:
+--      Cuisine: 'Japanese'
+SELECT r.Recipe_ID, r.User_ID, r.Name, r.Duration, r.Difficulty, r.Cuisine, r.Instructions
+FROM Recipes r
+WHERE r.cuisine = 'Japanese';
+
+-- selecting with parameters:
+--      Search: "yaki"
+SELECT r.Recipe_ID, r.User_ID, r.Name, r.Duration, r.Difficulty, r.Cuisine, r.Instructions
+FROM Recipes r
+WHERE r.name LIKE '%yaki%';
+
+-- selecting with parameters:
+--      Duration: > 60 minutes
+--      Search: "Rosemary"
+SELECT r.Recipe_ID, r.User_ID, r.Name, r.Duration, r.Difficulty, r.Cuisine, r.Instructions
+FROM Recipes r
+WHERE r.duration > 60
+AND r.name LIKE '%Rosemary%';
 
 -- feature 3: viewing a cooklist sample queries
 -- creating a cooklist
@@ -49,12 +83,14 @@ JOIN Recipes r ON clr.Recipe_ID = r.Recipe_ID
 WHERE clr.CookList_ID = 6  
 ORDER BY r.Name ASC; 
 
+
+-- feature 4: updating a recipe
 -- List all columns from Recipes
 SELECT * FROM Recipes;
 
 -- Insert new recipe:
 INSERT INTO Recipes
-    (Name, Duration, Difficulty, Cuisine, Instructions, Image_URL, User_ID)
+    (User_ID, Name, Duration, Difficulty, Cuisine, Instructions, Image_URL, User_ID)
 VALUES
     (
       'Blueberry Pancakes',
@@ -79,7 +115,7 @@ SET
     Instructions = 'Combine flour, milk, eggs, mashed banana, and blueberries; cook on griddle until golden; serve with honey or syrup.',
     Image_URL    = 'https://example.com/images/blueberry_banana_pancakes.jpg'
 WHERE
-    Recipe_ID    = 1
+    Recipe_ID    = 2
   AND User_ID      = 1;
 
 -- List all columns from Recipes

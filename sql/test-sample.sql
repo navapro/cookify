@@ -90,7 +90,7 @@ SELECT * FROM Recipes;
 
 -- Insert new recipe:
 INSERT INTO Recipes
-    (User_ID, Name, Duration, Difficulty, Cuisine, Instructions, Image_URL, User_ID)
+    (Name, Duration, Difficulty, Cuisine, Instructions, Image_URL, User_ID)
 VALUES
     (
       'Blueberry Pancakes',

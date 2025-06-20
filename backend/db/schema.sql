@@ -6,7 +6,6 @@ USE cookify;
 
 -- Drop tables if they exist (for clean slate)
 DROP TABLE IF EXISTS User_Activities;
-DROP TABLE IF EXISTS Cooklist_Creates;
 DROP TABLE IF EXISTS CookList_Likes;
 DROP TABLE IF EXISTS Recipe_Likes;
 DROP TABLE IF EXISTS CookList_Recipes;
@@ -182,7 +181,7 @@ INSERT INTO Ingredients (Name, Season, Price, Category) VALUES
 INSERT INTO Recipes (Name, Duration, Difficulty, Cuisine, Instructions, Servings, Image_URL) VALUES
 ('Classic Spaghetti Carbonara', 20, 'Medium', 'Italian', 'Cook pasta. Mix eggs and cheese. Combine with hot pasta and bacon. Serve immediately.', 4, '/images/carbonara.jpg'),
 ('Simple Tomato Salad', 10, 'Easy', 'Mediterranean', 'Slice tomatoes. Add basil, olive oil, salt and pepper. Let sit for 10 minutes.', 2, '/images/tomato-salad.jpg'),
-('Garlic Butter Chicken', 25, 'Easy', 'American', 'Season chicken with salt and pepper. Sauté with garlic and butter until golden.', 3, '/images/garlic-chicken.jpg'),
+('Garlic Butter Chicken', 25, 'Easy', 'American', 'Season chicken with salt and pepper. Saute with garlic and butter until golden.', 3, '/images/garlic-chicken.jpg'),
 ('Beef Stir Fry', 15, 'Medium', 'Asian', 'Cut beef into strips. Stir fry with vegetables and soy sauce over high heat.', 4, '/images/beef-stirfry.jpg'),
 ('Gordon Ramsay Beef Wellington', 180, 'Hard', 'British', 'Sear beef, wrap in pâté and pastry. Bake until golden. Advanced technique required.', 6, '/images/beef-wellington.jpg');
 

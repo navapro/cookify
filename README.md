@@ -40,7 +40,7 @@ MYSQL_DB=cookify
 
 Your database is now set up and ready for the application.
 
-### Launch the Application
+## Launch the Application
 Option 1: In one terminal, launch the react app:
 ```bash
 cd frontend
@@ -112,14 +112,9 @@ mysql -u root -p cookify < test-sample.sql
 
 ### Backend
 - **Flask** - Python web framework
-- **SQLAlchemy** - Database ORM
 - **MySQL** - Database
 - **JWT** - Authentication
 - **Werkzeug** - Password hashing
 
 ### Database
 - **MySQL 8.0** - DBSM
-
-### Development Tools
-- **Git** - Version control
-- **Shell Scripts** - Database management and app launching 

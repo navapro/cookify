@@ -1,8 +1,8 @@
 -- Cookify Database Schema - Complete Implementation
 
 -- Create database if it doesn't exist
-CREATE DATABASE IF NOT EXISTS cookify_db;
-USE cookify_db;
+CREATE DATABASE IF NOT EXISTS cookify;
+USE cookify;
 
 -- Drop tables if they exist (for clean slate)
 DROP TABLE IF EXISTS User_Activities;
@@ -15,6 +15,8 @@ DROP TABLE IF EXISTS CookLists;
 DROP TABLE IF EXISTS Ingredients;
 DROP TABLE IF EXISTS Recipes;
 DROP TABLE IF EXISTS Users;
+DROP TABLE IF EXISTS User_Activities;
+DROP TABLE IF EXISTS CookList_Likes;
 
 -- 1. Users Table - The chefs in our app
 CREATE TABLE Users (
@@ -110,24 +112,16 @@ CREATE TABLE CookList_Likes (
   FOREIGN KEY (CookList_ID) REFERENCES CookLists(CookList_ID) ON DELETE CASCADE
 );
 
--- 9. CookList Creates Table - Who created the cook list
-CREATE TABLE CookList_Creates (
-  User_ID INT NOT NULL,
-  CookList_ID INT NOT NULL,
-  Created_At DATETIME DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (User_ID, CookList_ID),
-  FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE,
-  FOREIGN KEY (CookList_ID) REFERENCES CookLists(CookList_ID) ON DELETE CASCADE
-);
-
 -- 10. User Activity Table - Track actions for leveling system
 CREATE TABLE User_Activities (
   Activity_ID INT AUTO_INCREMENT PRIMARY KEY,
   User_ID INT NOT NULL,
+  CookList_ID INT,
   Activity_Type ENUM('recipe_liked', 'recipe_cooked', 'cooklist_created', 'cooklist_shared'),
   Points_Earned INT DEFAULT 0,
   Activity_Date DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE
+  FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE,
+  FOREIGN KEY (CookList_ID) REFERENCES CookLists(CookList_ID) ON DELETE CASCADE
 );
 
 -- Performance Indexes for faster queries
@@ -281,13 +275,6 @@ INSERT INTO CookList_Likes (User_ID, CookList_ID) VALUES
 (1, 3), -- Alice likes Italian Classics
 (3, 5), -- Carol likes Master Chef Challenge
 (2, 4); -- Bob likes Learning to Cook
-
-INSERT INTO CookList_Creates(User_ID, CookList_ID) VALUES
-(1, 1),
-(2, 2),
-(1, 3),
-(4, 4),
-(3, 5);
 
 -- Add some activity tracking for the leveling system
 INSERT INTO User_Activities (User_ID, Activity_Type, Points_Earned) VALUES

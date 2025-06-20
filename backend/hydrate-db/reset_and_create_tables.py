@@ -63,7 +63,8 @@ def reset_and_create_tables():
                 Password VARCHAR(255) NOT NULL,
                 Date_of_Birth DATE,
                 Profile_Image TEXT,
-                Cookify_Level INT DEFAULT 1
+                Cookify_Level INT DEFAULT 0,
+                Points INT DEFAULT 0
             )
         """)
 
@@ -103,7 +104,7 @@ def reset_and_create_tables():
 
         # CookList
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS CookList (
+            CREATE TABLE IF NOT EXISTS CookLists (
                 CookList_ID INT AUTO_INCREMENT PRIMARY KEY,
                 User_ID INT NOT NULL,
                 Name VARCHAR(100) NOT NULL,
@@ -121,7 +122,7 @@ def reset_and_create_tables():
                 CookList_ID INT,
                 Recipe_ID INT,
                 PRIMARY KEY (CookList_ID, Recipe_ID),
-                FOREIGN KEY (CookList_ID) REFERENCES CookList(CookList_ID),
+                FOREIGN KEY (CookList_ID) REFERENCES CookLists(CookList_ID),
                 FOREIGN KEY (Recipe_ID) REFERENCES Recipes(Recipe_ID)
             )
         """)
@@ -146,7 +147,7 @@ def reset_and_create_tables():
                 Liked_At DATETIME DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (User_ID, CookList_ID),
                 FOREIGN KEY (User_ID) REFERENCES Users(User_ID),
-                FOREIGN KEY (CookList_ID) REFERENCES CookList(CookList_ID)
+                FOREIGN KEY (CookList_ID) REFERENCES CookLists(CookList_ID)
             )
         """)
 

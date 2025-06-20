@@ -178,12 +178,12 @@ INSERT INTO Ingredients (Name, Season, Price, Category) VALUES
 ('Lemon', 'All Year', 0.75, 'Citrus');
 
 -- Sample recipes with varying difficulties
-INSERT INTO Recipes (Name, Duration, Difficulty, Cuisine, Instructions, Servings, Image_URL) VALUES
-('Classic Spaghetti Carbonara', 20, 'Medium', 'Italian', 'Cook pasta. Mix eggs and cheese. Combine with hot pasta and bacon. Serve immediately.', 4, '/images/carbonara.jpg'),
-('Simple Tomato Salad', 10, 'Easy', 'Mediterranean', 'Slice tomatoes. Add basil, olive oil, salt and pepper. Let sit for 10 minutes.', 2, '/images/tomato-salad.jpg'),
-('Garlic Butter Chicken', 25, 'Easy', 'American', 'Season chicken with salt and pepper. Saute with garlic and butter until golden.', 3, '/images/garlic-chicken.jpg'),
-('Beef Stir Fry', 15, 'Medium', 'Asian', 'Cut beef into strips. Stir fry with vegetables and soy sauce over high heat.', 4, '/images/beef-stirfry.jpg'),
-('Gordon Ramsay Beef Wellington', 180, 'Hard', 'British', 'Sear beef, wrap in pâté and pastry. Bake until golden. Advanced technique required.', 6, '/images/beef-wellington.jpg');
+INSERT INTO Recipes (User_ID, Name, Duration, Difficulty, Cuisine, Instructions, Servings, Image_URL) VALUES
+(1, 'Classic Spaghetti Carbonara', 20, 'Medium', 'Italian', 'Cook pasta. Mix eggs and cheese. Combine with hot pasta and bacon. Serve immediately.', 4, '/images/carbonara.jpg'),
+(2, 'Simple Tomato Salad', 10, 'Easy', 'Mediterranean', 'Slice tomatoes. Add basil, olive oil, salt and pepper. Let sit for 10 minutes.', 2, '/images/tomato-salad.jpg'),
+(1, 'Garlic Butter Chicken', 25, 'Easy', 'American', 'Season chicken with salt and pepper. Saute with garlic and butter until golden.', 3, '/images/garlic-chicken.jpg'),
+(4, 'Beef Stir Fry', 15, 'Medium', 'Asian', 'Cut beef into strips. Stir fry with vegetables and soy sauce over high heat.', 4, '/images/beef-stirfry.jpg'),
+(3, 'Gordon Ramsay Beef Wellington', 180, 'Hard', 'British', 'Sear beef, wrap in pâté and pastry. Bake until golden. Advanced technique required.', 6, '/images/beef-wellington.jpg');
 
 -- Link recipes to ingredients
 INSERT INTO Recipe_Ingredients (Recipe_ID, Ingredient_ID, Quantity, Unit) VALUES

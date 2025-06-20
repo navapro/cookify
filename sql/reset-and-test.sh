@@ -2,14 +2,39 @@
 
 # Database credentials
 DB_USER="root"
-DB_PASSWORD="judy123"
+DB_PASSWORD="root"
 DB_NAME="cookify"
 
-# 1. Reset the database
-mysql -u"$DB_USER" -p"$DB_PASSWORD" -e "DROP DATABASE IF EXISTS $DB_NAME; CREATE DATABASE $DB_NAME;"
+SCHEMA_FILE="create_tables.sql"
+TEST_SQL_FILE="test-sample.sql"
+TEST_OUT_FILE="test-sample.out"
 
-# 2. Create the tables
-mysql -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < "cookify/sql/create_tables.sql"
+# --- Script Execution ---
 
-# 3. Run the test queries
-mysql -u"$DB_USER" -p"$DB_PASSWORD" -D "$DB_NAME" -t < "cookify/sql/test-sample.sql" 
+echo "Resetting the database using '$SCHEMA_FILE'..."
+
+mysql -u"$DB_USER" -p"$DB_PASS" < "$SCHEMA_FILE"
+
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to reset the database. Please check your credentials and the schema file path."
+    exit 1
+fi
+
+echo "Database reset successfully."
+echo "----------------------------------"
+echo "Running test queries from '$TEST_SQL_FILE'..."
+
+mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" < "$TEST_SQL_FILE"
+
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to run test queries."
+    exit 1
+fi
+
+echo "Test queries executed. Output saved to '$TEST_OUT_FILE'."
+echo ""
+echo "--- Test Output ---"
+# Use 'cat' to display the content of the output file
+cat "$TEST_OUT_FILE"
+echo "-------------------"
+echo "Script finished."

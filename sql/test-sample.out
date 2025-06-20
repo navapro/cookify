@@ -1,28 +1,37 @@
--- Query 1: Check if email exists (should return empty for new email)
-Empty set (0.00 sec)
-
--- Query 2: Insert new user (successful)
-Query OK, 1 row affected (0.01 sec)
-
--- Query 3: Verify user creation
-+--------+----------+---------------------+--------------+---------------------+
-|User_ID | Name     | Email               | Cookify_Level| Created_At          |
-+--------+----------+---------------------+--------------+---------------------+
-|      1 | John Doe | john.doe@email.com  | 🐀 Street Rat| 2025-06-19 10:30:00 |
-+--------+----------+---------------------+--------------+---------------------+
-1 row in set (0.00 sec)
-
--- Query 4: Duplicate email test (should fail)
-ERROR 1062 (23000): Duplicate entry 'john.doe@email.com' for key 'Email'
-
--- Query 5: Create second user (successful)
-Query OK, 1 row affected (0.01 sec)
-
--- Query 6: View all users
-+--------+------------+------------------------+--------------+---------------------+
-|User_ID | Name       | Email                  | Cookify_Level| Created_At          |
-+--------+------------+------------------------+--------------+---------------------+
-|      2 | Sarah Chef | sarah.chef@email.com   | 🐀 Street Rat| 2025-06-19 10:35:00 |
-|      1 | John Doe   | john.doe@email.com     | 🐀 Street Rat| 2025-06-19 10:30:00 |
-+--------+------------+------------------------+--------------+---------------------+
-2 rows in set (0.00 sec) 
+User_ID	Name	Email	Cookify_Level	Created_At
+6	John Doe	john.doe@email.com	🐀 Street Rat	2025-06-19 22:24:29
+User_ID	Name	Email	Cookify_Level	Created_At
+6	John Doe	john.doe@email.com	🐀 Street Rat	2025-06-19 22:24:29
+7	Jane Smith	jane.doe@email.com	🐀 Street Rat	2025-06-19 22:24:29
+8	Sarah Chef	sarah.chef@email.com	🐀 Street Rat	2025-06-19 22:24:29
+1	Alice Chef	alice@cookify.com	🏠 Restaurant Owner	2025-06-19 22:24:28
+2	Bob Novice	bob@cookify.com	🐀 Street Rat	2025-06-19 22:24:28
+3	Carol Expert	carol@cookify.com	👑🐭 Remy the Rat	2025-06-19 22:24:28
+4	Dave Beginner	dave@cookify.com	🐀 Street Rat	2025-06-19 22:24:28
+5	Emma Master	emma@cookify.com	👑🐭 Remy the Rat	2025-06-19 22:24:28
+Recipe_ID	Name	Cuisine	Difficulty	Instructions	Added_To_List_At
+2	Simple Tomato Salad	Mediterranean	Easy	Slice tomatoes. Add basil, olive oil, salt and pepper. Let sit for 10 minutes.	2025-06-19 22:24:29
+4	Beef Stir Fry	Asian	Medium	Cut beef into strips. Stir fry with vegetables and soy sauce over high heat.	2025-06-19 22:24:29
+Recipe_ID	Name	Cuisine	Difficulty	Instructions	Added_To_List_At
+4	Beef Stir Fry	Asian	Medium	Cut beef into strips. Stir fry with vegetables and soy sauce over high heat.	2025-06-19 22:24:29
+2	Simple Tomato Salad	Mediterranean	Easy	Slice tomatoes. Add basil, olive oil, salt and pepper. Let sit for 10 minutes.	2025-06-19 22:24:29
+Recipe_ID	User_ID	Name	Duration	Difficulty	Cuisine	Instructions	Recipe_Link	Image_URL	Servings	Created_At	Updated_At
+1	1	Classic Spaghetti Carbonara	20	Medium	Italian	Cook pasta. Mix eggs and cheese. Combine with hot pasta and bacon. Serve immediately.	NULL	/images/carbonara.jpg	4	2025-06-19 22:24:28	2025-06-19 22:24:28
+2	2	Simple Tomato Salad	10	Easy	Mediterranean	Slice tomatoes. Add basil, olive oil, salt and pepper. Let sit for 10 minutes.	NULL	/images/tomato-salad.jpg	2	2025-06-19 22:24:28	2025-06-19 22:24:28
+3	1	Garlic Butter Chicken	25	Easy	American	Season chicken with salt and pepper. Saute with garlic and butter until golden.	NULL	/images/garlic-chicken.jpg	3	2025-06-19 22:24:28	2025-06-19 22:24:28
+4	4	Beef Stir Fry	15	Medium	Asian	Cut beef into strips. Stir fry with vegetables and soy sauce over high heat.	NULL	/images/beef-stirfry.jpg	4	2025-06-19 22:24:28	2025-06-19 22:24:28
+5	3	Gordon Ramsay Beef Wellington	180	Hard	British	Sear beef, wrap in pâté and pastry. Bake until golden. Advanced technique required.	NULL	/images/beef-wellington.jpg	6	2025-06-19 22:24:28	2025-06-19 22:24:28
+Recipe_ID	User_ID	Name	Duration	Difficulty	Cuisine	Instructions	Recipe_Link	Image_URL	Servings	Created_At	Updated_At
+1	1	Classic Spaghetti Carbonara	20	Medium	Italian	Cook pasta. Mix eggs and cheese. Combine with hot pasta and bacon. Serve immediately.	NULL	/images/carbonara.jpg	4	2025-06-19 22:24:28	2025-06-19 22:24:28
+2	2	Simple Tomato Salad	10	Easy	Mediterranean	Slice tomatoes. Add basil, olive oil, salt and pepper. Let sit for 10 minutes.	NULL	/images/tomato-salad.jpg	2	2025-06-19 22:24:28	2025-06-19 22:24:28
+3	1	Garlic Butter Chicken	25	Easy	American	Season chicken with salt and pepper. Saute with garlic and butter until golden.	NULL	/images/garlic-chicken.jpg	3	2025-06-19 22:24:28	2025-06-19 22:24:28
+4	4	Beef Stir Fry	15	Medium	Asian	Cut beef into strips. Stir fry with vegetables and soy sauce over high heat.	NULL	/images/beef-stirfry.jpg	4	2025-06-19 22:24:28	2025-06-19 22:24:28
+5	3	Gordon Ramsay Beef Wellington	180	Hard	British	Sear beef, wrap in pâté and pastry. Bake until golden. Advanced technique required.	NULL	/images/beef-wellington.jpg	6	2025-06-19 22:24:28	2025-06-19 22:24:28
+6	1	Blueberry Pancakes	25	Easy	American	Mix flour, milk, eggs, and blueberries; cook on griddle until golden brown; serve with syrup.	NULL	https://example.com/images/blueberry_pancakes.jpg	1	2025-06-19 22:24:29	2025-06-19 22:24:29
+Recipe_ID	User_ID	Name	Duration	Difficulty	Cuisine	Instructions	Recipe_Link	Image_URL	Servings	Created_At	Updated_At
+1	1	Blueberry Banana Pancakes	30	Easy	American	Combine flour, milk, eggs, mashed banana, and blueberries; cook on griddle until golden; serve with honey or syrup.	NULL	https://example.com/images/blueberry_banana_pancakes.jpg	4	2025-06-19 22:24:28	2025-06-19 22:24:29
+2	2	Simple Tomato Salad	10	Easy	Mediterranean	Slice tomatoes. Add basil, olive oil, salt and pepper. Let sit for 10 minutes.	NULL	/images/tomato-salad.jpg	2	2025-06-19 22:24:28	2025-06-19 22:24:28
+3	1	Garlic Butter Chicken	25	Easy	American	Season chicken with salt and pepper. Saute with garlic and butter until golden.	NULL	/images/garlic-chicken.jpg	3	2025-06-19 22:24:28	2025-06-19 22:24:28
+4	4	Beef Stir Fry	15	Medium	Asian	Cut beef into strips. Stir fry with vegetables and soy sauce over high heat.	NULL	/images/beef-stirfry.jpg	4	2025-06-19 22:24:28	2025-06-19 22:24:28
+5	3	Gordon Ramsay Beef Wellington	180	Hard	British	Sear beef, wrap in pâté and pastry. Bake until golden. Advanced technique required.	NULL	/images/beef-wellington.jpg	6	2025-06-19 22:24:28	2025-06-19 22:24:28
+6	1	Blueberry Pancakes	25	Easy	American	Mix flour, milk, eggs, and blueberries; cook on griddle until golden brown; serve with syrup.	NULL	https://example.com/images/blueberry_pancakes.jpg	1	2025-06-19 22:24:29	2025-06-19 22:24:29

@@ -86,7 +86,7 @@ Option 2:
 From your regular terminal (not the MySQL monitor), navigate to the project's root directory. Run the following command to execute the master schema file. This will create all the necessary tables and insert the sample data.
 
 ```bash
-mysql -u root -p cookify < create_and_update_recipes.sql
+mysql -u root -p cookify < create_tables.sql
 ```
 (If this doesn't work, cd into sql folder and run: mysql -u root -p cookify < create_and_update_recipes.sql)
 

@@ -33,6 +33,7 @@ CREATE TABLE Users (
 -- 2. Recipes Table - The dishes in our cookbook
 CREATE TABLE Recipes (
   Recipe_ID INT AUTO_INCREMENT PRIMARY KEY,
+  User_ID INT NOT NULL,
   Name VARCHAR(100) NOT NULL,
   Duration INT, -- Duration in minutes
   Difficulty ENUM('Easy', 'Medium', 'Hard'),
@@ -42,7 +43,8 @@ CREATE TABLE Recipes (
   Image_URL VARCHAR(255),
   Servings INT DEFAULT 1,
   Created_At DATETIME DEFAULT CURRENT_TIMESTAMP,
-  Updated_At DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  Updated_At DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE
 );
 
 -- 3. Ingredients Table - Our pantry
@@ -110,7 +112,7 @@ CREATE TABLE CookList_Likes (
   FOREIGN KEY (CookList_ID) REFERENCES CookLists(CookList_ID) ON DELETE CASCADE
 );
 
--- 10. User Activity Table - Track actions for leveling system
+-- 9. User Activity Table - Track actions for leveling system
 CREATE TABLE User_Activities (
   Activity_ID INT AUTO_INCREMENT PRIMARY KEY,
   User_ID INT NOT NULL,
@@ -179,12 +181,12 @@ INSERT INTO Ingredients (Name, Season, Price, Category) VALUES
 ('Lemon', 'All Year', 0.75, 'Citrus');
 
 -- Sample recipes with varying difficulties
-INSERT INTO Recipes (Name, Duration, Difficulty, Cuisine, Instructions, Servings, Image_URL) VALUES
-('Classic Spaghetti Carbonara', 20, 'Medium', 'Italian', 'Cook pasta. Mix eggs and cheese. Combine with hot pasta and bacon. Serve immediately.', 4, '/images/carbonara.jpg'),
-('Simple Tomato Salad', 10, 'Easy', 'Mediterranean', 'Slice tomatoes. Add basil, olive oil, salt and pepper. Let sit for 10 minutes.', 2, '/images/tomato-salad.jpg'),
-('Garlic Butter Chicken', 25, 'Easy', 'American', 'Season chicken with salt and pepper. Sauté with garlic and butter until golden.', 3, '/images/garlic-chicken.jpg'),
-('Beef Stir Fry', 15, 'Medium', 'Asian', 'Cut beef into strips. Stir fry with vegetables and soy sauce over high heat.', 4, '/images/beef-stirfry.jpg'),
-('Gordon Ramsay Beef Wellington', 180, 'Hard', 'British', 'Sear beef, wrap in pâté and pastry. Bake until golden. Advanced technique required.', 6, '/images/beef-wellington.jpg');
+INSERT INTO Recipes (User_ID, Name, Duration, Difficulty, Cuisine, Instructions, Servings, Image_URL) VALUES
+(1, 'Classic Spaghetti Carbonara', 20, 'Medium', 'Italian', 'Cook pasta. Mix eggs and cheese. Combine with hot pasta and bacon. Serve immediately.', 4, '/images/carbonara.jpg'),
+(2, 'Simple Tomato Salad', 10, 'Easy', 'Mediterranean', 'Slice tomatoes. Add basil, olive oil, salt and pepper. Let sit for 10 minutes.', 2, '/images/tomato-salad.jpg'),
+(2, 'Garlic Butter Chicken', 25, 'Easy', 'American', 'Season chicken with salt and pepper. Sauté with garlic and butter until golden.', 3, '/images/garlic-chicken.jpg'),
+(3, 'Beef Stir Fry', 15, 'Medium', 'Asian', 'Cut beef into strips. Stir fry with vegetables and soy sauce over high heat.', 4, '/images/beef-stirfry.jpg'),
+(5, 'Gordon Ramsay Beef Wellington', 180, 'Hard', 'British', 'Sear beef, wrap in pâté and pastry. Bake until golden. Advanced technique required.', 6, '/images/beef-wellington.jpg');
 
 -- Link recipes to ingredients
 INSERT INTO Recipe_Ingredients (Recipe_ID, Ingredient_ID, Quantity, Unit) VALUES
@@ -284,40 +286,6 @@ INSERT INTO User_Activities (User_ID, Activity_Type, Points_Earned) VALUES
 (3, 'recipe_cooked', 20),
 (4, 'recipe_liked', 5),
 (5, 'recipe_cooked', 25);
-
--- Create trigger to update user level based on points
-DELIMITER //
-CREATE TRIGGER update_user_level
-AFTER UPDATE ON Users
-FOR EACH ROW
-BEGIN
-    IF NEW.Points != OLD.Points THEN
-        SET NEW.Cookify_Level = CASE
-            WHEN NEW.Points >= 500 THEN '👑🐭 Remy the Rat'
-            WHEN NEW.Points >= 301 THEN '🔥 Gordon Ramsey'
-            WHEN NEW.Points >= 201 THEN '🏠 Restaurant Owner'
-            WHEN NEW.Points >= 101 THEN '👨‍🍳 Chef de Cuisine'
-            WHEN NEW.Points >= 51 THEN '🧂 Sous Chef'
-            WHEN NEW.Points >= 26 THEN '🧑‍🍳 Commis Chef'
-            WHEN NEW.Points >= 11 THEN '🔪 Prep Cook'
-            WHEN NEW.Points >= 2 THEN '🧽 Dishwasher'
-            ELSE '🐀 Street Rat'
-        END;
-    END IF;
-END //
-DELIMITER ;
-
--- Create trigger to update user points when activity is added
-DELIMITER //
-CREATE TRIGGER update_user_points
-AFTER INSERT ON User_Activities
-FOR EACH ROW
-BEGIN
-    UPDATE Users 
-    SET Points = Points + NEW.Points_Earned
-    WHERE User_ID = NEW.User_ID;
-END //
-DELIMITER ;
 
 -- Display success message and basic stats
 SELECT 'Database setup complete!' as Status;

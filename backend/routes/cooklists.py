@@ -10,7 +10,7 @@ def get_all_cooklists():
         result = db.session.execute(text("""
             SELECT cl.CookList_ID, cl.Name, cl.Description, u.Name as User_Name,
                    GROUP_CONCAT(r.Name) as Recipes
-            FROM CookList cl
+            FROM CookLists cl
             JOIN Users u ON cl.User_ID = u.User_ID
             LEFT JOIN CookList_Recipes cr ON cl.CookList_ID = cr.CookList_ID
             LEFT JOIN Recipes r ON cr.Recipe_ID = r.Recipe_ID
@@ -36,7 +36,7 @@ def get_cooklist(cooklist_id):
             text("""
                 SELECT cl.CookList_ID, cl.Name, cl.Description, u.Name as User_Name,
                        GROUP_CONCAT(r.Name) as Recipes
-                FROM CookList cl
+                FROM CookLists cl
                 JOIN Users u ON cl.User_ID = u.User_ID
                 LEFT JOIN CookList_Recipes cr ON cl.CookList_ID = cr.CookList_ID
                 LEFT JOIN Recipes r ON cr.Recipe_ID = r.Recipe_ID
@@ -56,4 +56,4 @@ def get_cooklist(cooklist_id):
             })
         return jsonify({"error": "CookList not found"}), 404
     except Exception as e:
-        return jsonify({"error": str(e)}), 500 
+        return jsonify({"error": str(e)}), 500

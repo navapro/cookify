@@ -78,6 +78,10 @@ cd sql
 ./reset-and-test.sh
 ```
 
+This script resets the database, creates tables, and runs test queries for user profile creation.
+
+If it fails, you can manually run the sql script:
+
 Option 2:
 
 **C2: Populate the Database**
@@ -87,15 +91,11 @@ From your regular terminal (not the MySQL monitor), navigate to the project's ro
 ```bash
 mysql -u root -p cookify < create_tables.sql
 ```
-(If this doesn't work, cd into sql folder and run: mysql -u root -p cookify < create_and_update_recipes.sql)
 
 You will be prompted to enter the password for the root user.
 
 **C3: Run test-sample.sql Script**
 
-This script resets the database, creates tables, and runs test queries for user profile creation.
-
-If it fails, you can manually run the sql script:
 ```bash
 mysql -u root -p cookify < test-sample.sql
 ```

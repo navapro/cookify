@@ -80,7 +80,7 @@ cd sql
 
 This script resets the database, creates tables, and runs test queries for user profile creation.
 
-If it fails, you can manually run the sql script:
+If it fails, you can manually run the sql scripts via option 2.
 
 Option 2:
 

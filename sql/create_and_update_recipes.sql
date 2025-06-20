@@ -28,7 +28,7 @@ SET
     Instructions = 'Combine flour, milk, eggs, mashed banana, and blueberries; cook on griddle until golden; serve with honey or syrup.',
     Image_URL    = 'https://example.com/images/blueberry_banana_pancakes.jpg'
 WHERE
-    Recipe_ID    = 1
+    Recipe_ID    = 2
   AND User_ID      = 1;
 
 -- List all columns from Recipes

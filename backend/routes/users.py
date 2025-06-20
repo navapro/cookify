@@ -9,8 +9,8 @@ users_bp = Blueprint('users', __name__)
 @users_bp.route('/', methods=['GET'])
 def get_all_users():
     try:
-        result = db.session.execute(text("SELECT User_ID, Name, Email, Cookify_Level FROM Users"))
-        users = [{"id": row[0], "name": row[1], "email": row[2], "level": row[3]} for row in result]
+        result = db.session.execute(text("SELECT User_ID, Name, Email, Points, Cookify_Level FROM Users"))
+        users = [{"id": row[0], "name": row[1], "email": row[2], "points": row[3], "level": row[4]} for row in result]
         return jsonify({"users": users})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -24,7 +24,7 @@ def get_user(user_id):
 
     try:
         result = db.session.execute(
-            text("SELECT User_ID, Name, Email, Cookify_Level FROM Users WHERE User_ID = :id"),
+            text("SELECT User_ID, Name, Email, Points, Cookify_Level FROM Users WHERE User_ID = :id"),
             {"id": current_user_id}
         )
         user = result.fetchone()
@@ -33,7 +33,8 @@ def get_user(user_id):
                 "id": user[0],
                 "name": user[1],
                 "email": user[2],
-                "level": user[3]
+                "points": user[3],
+                "level": user[4]
             })
         return jsonify({"error": "User not found"}), 404
     except Exception as e:
@@ -47,21 +48,22 @@ def get_user_stats(user_id):
         return jsonify({"error": "Unauthorized access"}), 403
 
     try:
-        # Get user's cookify level
+        # Get user's points and cookify level
         user_result = db.session.execute(
-            text("SELECT Cookify_Level FROM Users WHERE User_ID = :id"),
+            text("SELECT Points, Cookify_Level FROM Users WHERE User_ID = :id"),
             {"id": current_user_id}
         )
         user = user_result.fetchone()
         if not user:
             return jsonify({"error": "User not found"}), 404
         
-        cookify_level = user[0]
+        points = user[0]
+        cookify_level = user[1]
 
-        # Count recipes created by user (assuming recipes have a User_ID field)
-        # For now, we'll count all recipes since the current schema doesn't track recipe ownership
+        # Count recipes created by user
         recipe_count_result = db.session.execute(
-            text("SELECT COUNT(*) FROM Recipes")
+            text("SELECT COUNT(*) FROM Recipes WHERE User_ID = :user_id"),
+            {"user_id": current_user_id}
         )
         recipe_count = recipe_count_result.fetchone()[0]
 
@@ -73,11 +75,42 @@ def get_user_stats(user_id):
         cooklist_count = cooklist_count_result.fetchone()[0]
 
         return jsonify({
+            "points": points,
             "cookify_level": cookify_level,
             "recipes_created": recipe_count,
             "cooklists_created": cooklist_count
         })
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@users_bp.route('/<int:user_id>/activity', methods=['POST'])
+@jwt_required()
+def add_user_activity(user_id):
+    current_user_id = get_jwt_identity()
+    if current_user_id != user_id:
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No input data provided"}), 400
+
+        activity_type = data.get('activity_type')
+        points_earned = data.get('points_earned', 0)
+
+        if not activity_type:
+            return jsonify({"error": "Activity type is required"}), 400
+
+        # Insert the activity
+        db.session.execute(
+            text("INSERT INTO User_Activities (User_ID, Activity_Type, Points_Earned) VALUES (:user_id, :activity_type, :points_earned)"),
+            {"user_id": current_user_id, "activity_type": activity_type, "points_earned": points_earned}
+        )
+        db.session.commit()
+
+        return jsonify({"message": "Activity recorded successfully"}), 201
+    except Exception as e:
+        db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
 @users_bp.route('/', methods=['POST'])

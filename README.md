@@ -1,4 +1,4 @@
-# Cookify - Recipe Management App
+# Cookify - Spotify but for recipies
 
 A full-stack web application for recipe management with user profiles, cooklists, and a gamified leveling system.
 

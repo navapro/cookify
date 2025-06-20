@@ -32,6 +32,7 @@ CREATE TABLE Users (
 -- 2. Recipes Table - The dishes in our cookbook
 CREATE TABLE Recipes (
   Recipe_ID INT AUTO_INCREMENT PRIMARY KEY,
+  User_ID INT NOT NULL,
   Name VARCHAR(100) NOT NULL,
   Duration INT, -- Duration in minutes
   Difficulty ENUM('Easy', 'Medium', 'Hard'),
@@ -41,7 +42,8 @@ CREATE TABLE Recipes (
   Image_URL VARCHAR(255),
   Servings INT DEFAULT 1,
   Created_At DATETIME DEFAULT CURRENT_TIMESTAMP,
-  Updated_At DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  Updated_At DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE
 );
 
 -- 3. Ingredients Table - Our pantry
@@ -109,7 +111,7 @@ CREATE TABLE CookList_Likes (
   FOREIGN KEY (CookList_ID) REFERENCES CookLists(CookList_ID) ON DELETE CASCADE
 );
 
--- 10. User Activity Table - Track actions for leveling system
+-- 9. User Activity Table - Track actions for leveling system
 CREATE TABLE User_Activities (
   Activity_ID INT AUTO_INCREMENT PRIMARY KEY,
   User_ID INT NOT NULL,
@@ -283,40 +285,6 @@ INSERT INTO User_Activities (User_ID, Activity_Type, Points_Earned) VALUES
 (3, 'recipe_cooked', 20),
 (4, 'recipe_liked', 5),
 (5, 'recipe_cooked', 25);
-
--- Create trigger to update user level based on points
-DELIMITER //
-CREATE TRIGGER update_user_level
-AFTER UPDATE ON Users
-FOR EACH ROW
-BEGIN
-    IF NEW.Points != OLD.Points THEN
-        SET NEW.Cookify_Level = CASE
-            WHEN NEW.Points >= 500 THEN '👑🐭 Remy the Rat'
-            WHEN NEW.Points >= 301 THEN '🔥 Gordon Ramsey'
-            WHEN NEW.Points >= 201 THEN '🏠 Restaurant Owner'
-            WHEN NEW.Points >= 101 THEN '👨‍🍳 Chef de Cuisine'
-            WHEN NEW.Points >= 51 THEN '🧂 Sous Chef'
-            WHEN NEW.Points >= 26 THEN '🧑‍🍳 Commis Chef'
-            WHEN NEW.Points >= 11 THEN '🔪 Prep Cook'
-            WHEN NEW.Points >= 2 THEN '🧽 Dishwasher'
-            ELSE '🐀 Street Rat'
-        END;
-    END IF;
-END //
-DELIMITER ;
-
--- Create trigger to update user points when activity is added
-DELIMITER //
-CREATE TRIGGER update_user_points
-AFTER INSERT ON User_Activities
-FOR EACH ROW
-BEGIN
-    UPDATE Users 
-    SET Points = Points + NEW.Points_Earned
-    WHERE User_ID = NEW.User_ID;
-END //
-DELIMITER ;
 
 -- Display success message and basic stats
 SELECT 'Database setup complete!' as Status;

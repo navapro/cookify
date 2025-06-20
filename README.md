@@ -8,7 +8,6 @@ Ensure you have the following installed on your system:
 *   [Python 3](https://www.python.org/)
 *   [MySQL Server](https://dev.mysql.com/downloads/mysql/)
 
-### Setup 
 This application requires a MySQL database named `cookify`. Follow these steps to create and configure it.
 
 **1. Log into MySQL**

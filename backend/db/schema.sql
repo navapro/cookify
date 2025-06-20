@@ -1,4 +1,4 @@
--- Cookify Database Schema - Complete Implementation
+-- Cookify Database Schema
 
 -- Create database if it doesn't exist
 CREATE DATABASE IF NOT EXISTS cookify;
@@ -115,13 +115,11 @@ CREATE TABLE CookList_Likes (
 CREATE TABLE User_Activities (
   Activity_ID INT AUTO_INCREMENT PRIMARY KEY,
   User_ID INT NOT NULL,
-  CookList_ID INT,
   Activity_Type ENUM('recipe_created', 'recipe_liked', 'recipe_cooked', 'cooklist_created', 'cooklist_shared', 'recipe_rated', 'recipe_commented'),
   Points_Earned INT DEFAULT 0,
   Activity_Date DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE,
-  FOREIGN KEY (CookList_ID) REFERENCES CookLists(CookList_ID) ON DELETE CASCADE
-);
+  FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE
+); 
 
 -- Performance Indexes for faster queries
 CREATE INDEX idx_recipes_cuisine ON Recipes(Cuisine);

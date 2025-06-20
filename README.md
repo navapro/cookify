@@ -43,10 +43,7 @@ This script resets the database, creates tables, and runs test queries for user 
 - **Werkzeug** - Password hashing
 
 ### Database
-- **MySQL 8.0** - Primary database
-- **User Profiles** - Points and chef leveling system
-- **User Activities** - Gamification tracking
-- **Recipes & Cooklists** - Recipe management
+- **MySQL 8.0** - DBSM
 
 ### Development Tools
 - **Git** - Version control

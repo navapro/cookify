@@ -1,0 +1,196 @@
+import mysql.connector
+import random
+from pathlib import Path
+import sys
+from hydrate_db_helpers import (
+    create_dummy_users,
+    create_dummy_cooklists,
+    create_dummy_cooklist_recipes,
+    create_dummy_recipe_likes,
+    create_dummy_cooklist_likes
+)
+
+# If you also want to parse ingredient strings, re-import parse_ingredient
+from hydrate_db_helpers import IntegrityError  # for exception handling
+sys.path.append(str(Path(__file__).parent.parent))
+from config import Config
+
+
+
+def create_dummy_recipes(cursor, conn, admin_id, num_recipes=20):
+    """
+    Create dummy recipes using the admin_id as the author.  
+    Returns a list of created Recipe_IDs.
+    """
+    sample_titles = [
+        "Spicy Tomato Soup",
+        "Herb Roasted Chicken",
+        "Vegan Buddha Bowl",
+        "Classic Pancakes",
+        "Garlic Butter Shrimp",
+        "Chocolate Chip Cookies",
+        "Quinoa Salad",
+        "Beef Stir Fry",
+        "Lemon Drizzle Cake",
+        "Mango Smoothie",
+        "Avocado Toast",
+        "Pumpkin Spice Latte",
+        "Grilled Cheese Sandwich",
+        "Mediterranean Pasta",
+        "Teriyaki Salmon",
+        "BBQ Pulled Pork",
+        "Greek Yogurt Parfait",
+        "Spinach Frittata",
+        "Cauliflower Tacos",
+        "Berry Chia Pudding"
+    ]
+
+    # sample ingredients pool
+    sample_ingredients = [
+        "1 cup flour",
+        "2 tbsp olive oil",
+        "3 cloves garlic",
+        "fresh basil",
+        "salt",
+        "pepper",
+        "200g chicken breast",
+        "1 tbsp soy sauce",
+        "2 tsp sugar",
+        "100ml milk",
+        "1 egg",
+        "handful spinach",
+        "1 avocado",
+        "100g shrimp",
+        "150g quinoa",
+    ]
+
+    recipe_ids = []
+    for i in range(min(num_recipes, len(sample_titles))):
+        title = sample_titles[i]
+        duration = random.randrange(10, 120, 10)
+        difficulty = random.choice(["Easy", "Intermediate", "Hard"])
+        cuisine = random.choice(["American", "Italian", "Asian", "Mexican", "Mediterranean"])
+        instructions = f"Step-by-step instructions for {title}."
+        image_url = None  # or generate a placeholder
+
+        # Insert recipe
+        cursor.execute(
+            """
+            INSERT INTO Recipes
+              (Name, Duration, Difficulty, Cuisine, Instructions, Image_URL, User_ID)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """,
+            (title, duration, difficulty, cuisine, instructions, image_url, admin_id)
+        )
+        conn.commit()
+        rid = cursor.lastrowid
+        recipe_ids.append(rid)
+        print(f"Inserted recipe '{title}' with ID={rid}")
+
+        # Attach 3-6 random ingredients
+        ingredients_list = random.sample(sample_ingredients, random.randint(3, 6))
+        for ing_str in ingredients_list:
+            # simple split: assume first token qty, second token unit or part of name
+            parts = ing_str.split(None, 2)
+            if len(parts) == 3 and parts[1].isalpha():
+                qty, unit, name = parts
+            elif len(parts) == 2:
+                # could be qty+unit or unit+name
+                if parts[0].replace('.','',1).isdigit():
+                    qty = parts[0]
+                    unit = None
+                    name = parts[1]
+                else:
+                    qty = None
+                    unit = None
+                    name = ing_str
+            else:
+                qty = None
+                unit = None
+                name = ing_str
+
+            # apply defaults
+            if unit is None:
+                unit_val = "count"
+            else:
+                unit_val = unit
+            if qty is None:
+                qty_val = '1'
+            else:
+                qty_val = qty
+
+            try:
+                cursor.execute(
+                    "INSERT INTO Recipe_Ingredients (Recipe_ID, Ingredient_ID, Quantity, Unit)"
+                    " VALUES (%s, %s, %s, %s)",
+                    (rid,
+                     # look up ingredient, insert if missing
+                     get_or_create_ingredient(cursor, conn, name),
+                     qty_val,
+                     unit_val)
+                )
+            except IntegrityError:
+                pass
+        conn.commit()
+
+    return recipe_ids
+
+
+def get_or_create_ingredient(cursor, conn, ing_name: str):
+    """
+    Fetches Ingredient_ID for ing_name (case-insensitive), or creates it.
+    """
+    key = ing_name.lower()
+    cursor.execute(
+        "SELECT Ingredient_ID FROM Ingredients WHERE LOWER(Name) = %s",
+        (key,)
+    )
+    row = cursor.fetchone()
+    if row:
+        return row[0]
+
+    # insert new
+    cursor.execute(
+        "INSERT INTO Ingredients (Name) VALUES (%s)",
+        (ing_name,)
+    )
+    conn.commit()
+    return cursor.lastrowid
+
+
+def main():
+    # Connect
+    config = Config()
+    db_conf = dict(
+        host=config.MYSQL_HOST,
+        user=config.MYSQL_USER,
+        password=config.MYSQL_PASSWORD,
+        database=config.MYSQL_DB,
+        charset='utf8mb4',
+        use_unicode=True
+    )
+    conn = mysql.connector.connect(**db_conf)
+    cursor = conn.cursor(buffered=True)
+
+    # 1) Users
+    ids = create_dummy_users(cursor, conn, n=10)
+    admin_id = ids['admin_id']
+    user_ids = ids['user_ids']
+
+    # 2) CookLists
+    cooklist_ids = create_dummy_cooklists(cursor, conn, user_ids, lists_per_user=2)
+
+    # 3) Recipes & Ingredients
+    recipe_ids = create_dummy_recipes(cursor, conn, admin_id, num_recipes=20)
+
+    # 4) Associations
+    create_dummy_cooklist_recipes(cursor, conn, cooklist_ids, recipe_ids)
+    create_dummy_recipe_likes(cursor, conn, user_ids, recipe_ids, like_probability=0.3)
+    create_dummy_cooklist_likes(cursor, conn, user_ids, cooklist_ids, like_probability=0.2)
+
+    cursor.close()
+    conn.close()
+    print("Data population complete.")
+
+if __name__ == '__main__':
+    main()

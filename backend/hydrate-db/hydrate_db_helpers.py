@@ -17,7 +17,7 @@ def create_dummy_users(cursor, conn, n=10):
         cursor.execute(
             """
             INSERT INTO Users (Name, Email, Password, Date_of_Birth, Cookify_Level, Points, Profile_Image)
-            VALUES (%s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 'admin',
@@ -62,7 +62,7 @@ def create_dummy_users(cursor, conn, n=10):
             cursor.execute(
                 """
                 INSERT INTO Users (Name, Email, Password, Date_of_Birth, Cookify_Level, Points, Profile_Image)
-                VALUES (%s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """,
                 (name, email, password, dob, level, points, img)
             )

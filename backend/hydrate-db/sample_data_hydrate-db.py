@@ -16,7 +16,6 @@ sys.path.append(str(Path(__file__).parent.parent))
 from config import Config
 
 
-
 def create_dummy_recipes(cursor, conn, admin_id, num_recipes=20):
     """
     Create dummy recipes using the admin_id as the author.  
@@ -65,13 +64,15 @@ def create_dummy_recipes(cursor, conn, admin_id, num_recipes=20):
     ]
 
     recipe_ids = []
-    for i in range(min(num_recipes, len(sample_titles))):
-        title = sample_titles[i]
+    for i, title in enumerate(sample_titles[:num_recipes]):
         duration = random.randrange(10, 120, 10)
         difficulty = random.choice(["Easy", "Intermediate", "Hard"])
         cuisine = random.choice(["American", "Italian", "Asian", "Mexican", "Mediterranean"])
         instructions = f"Step-by-step instructions for {title}."
-        image_url = None  # or generate a placeholder
+
+        # Generate image URL from title
+        slug = title.lower().replace(' ', '-')
+        image_url = f"/images/{slug}.jpg"
 
         # Insert recipe
         cursor.execute(
@@ -85,18 +86,16 @@ def create_dummy_recipes(cursor, conn, admin_id, num_recipes=20):
         conn.commit()
         rid = cursor.lastrowid
         recipe_ids.append(rid)
-        print(f"Inserted recipe '{title}' with ID={rid}")
+        print(f"Inserted recipe '{title}' with ID={rid} and Image_URL={image_url}")
 
         # Attach 3-6 random ingredients
         ingredients_list = random.sample(sample_ingredients, random.randint(3, 6))
         for ing_str in ingredients_list:
-            # simple split: assume first token qty, second token unit or part of name
             parts = ing_str.split(None, 2)
             if len(parts) == 3 and parts[1].isalpha():
                 qty, unit, name = parts
             elif len(parts) == 2:
-                # could be qty+unit or unit+name
-                if parts[0].replace('.','',1).isdigit():
+                if parts[0].replace('.', '', 1).isdigit():
                     qty = parts[0]
                     unit = None
                     name = parts[1]
@@ -109,22 +108,14 @@ def create_dummy_recipes(cursor, conn, admin_id, num_recipes=20):
                 unit = None
                 name = ing_str
 
-            # apply defaults
-            if unit is None:
-                unit_val = "count"
-            else:
-                unit_val = unit
-            if qty is None:
-                qty_val = '1'
-            else:
-                qty_val = qty
+            unit_val = unit if unit else "count"
+            qty_val = qty if qty else '1'
 
             try:
                 cursor.execute(
                     "INSERT INTO Recipe_Ingredients (Recipe_ID, Ingredient_ID, Quantity, Unit)"
                     " VALUES (%s, %s, %s, %s)",
                     (rid,
-                     # look up ingredient, insert if missing
                      get_or_create_ingredient(cursor, conn, name),
                      qty_val,
                      unit_val)
@@ -149,7 +140,6 @@ def get_or_create_ingredient(cursor, conn, ing_name: str):
     if row:
         return row[0]
 
-    # insert new
     cursor.execute(
         "INSERT INTO Ingredients (Name) VALUES (%s)",
         (ing_name,)
@@ -159,7 +149,6 @@ def get_or_create_ingredient(cursor, conn, ing_name: str):
 
 
 def main():
-    # Connect
     config = Config()
     db_conf = dict(
         host=config.MYSQL_HOST,

@@ -10,18 +10,8 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 from config import Config
 
-"""
-# 1. Sign in (use –p only if the account has a password)
-mysql -u root -p
-
-# 2. Create the database (replace myapp_db with your name)
-CREATE DATABASE myapp_db
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
-# 3. Confirm
-SHOW DATABASES;
-"""
+# ADMIN user constant
+ADMIN_USER_ID = 1
 
 config = Config()
 
@@ -36,15 +26,11 @@ DB_CONFIG = {
 
 CSV_PATH = 'recipes.csv'
 
-# If your Image_Name should map to a URL/path, adjust this function:
 def make_image_url(image_name: str) -> str:
     if not image_name or pd.isna(image_name):
         return None
-    # example: store under /images/{image_name}.jpg
     return f"/images/{image_name}.jpg"
 
-# Simple heuristic parser for ingredient strings.
-# Returns (quantity: str or None, unit: str or None, name: str)
 COMMON_UNITS = {
     'cup','cups','tbsp','tbsp.','tablespoon','tablespoons',
     'tsp','tsp.','teaspoon','teaspoons',
@@ -55,11 +41,6 @@ COMMON_UNITS = {
 }
 
 def parse_ingredient(ing_str: str):
-    """
-    Heuristic: split off first token as quantity, 
-    check second token against COMMON_UNITS for unit,
-    rest as name. If fails, leave quantity/unit None and name = full string.
-    """
     s = ing_str.strip()
     if not s:
         return None, None, ''
@@ -67,9 +48,6 @@ def parse_ingredient(ing_str: str):
     if len(parts) == 1:
         return None, None, s
     qty_candidate, rest = parts
-
-    # Basic check: qty_candidate contains digits or fractions?
-    # We'll accept as quantity if it contains any digit or fraction char
     if re.search(r'[\d¼½¾⅓⅔–/]', qty_candidate):
         subparts = rest.split(None, 1)
         token = subparts[0].lower().rstrip('.,')
@@ -81,7 +59,6 @@ def parse_ingredient(ing_str: str):
             return qty_candidate, None, rest.strip()
     else:
         return None, None, s
-
 
 def main():
     # 1. Connect to MySQL
@@ -109,8 +86,6 @@ def main():
 
     # 2. Load CSV into DataFrame
     df = pd.read_csv(CSV_PATH)
-
-    # Ensure the column for ingredients exists
     if 'Cleaned_Ingredients' not in df.columns:
         print("Error: 'Cleaned_Ingredients' column not found in CSV")
         return
@@ -121,54 +96,41 @@ def main():
         instructions = row.get('Instructions')
         image_name = row.get('Image_Name')
         image_url = make_image_url(image_name)
-        top_5_cuisines = [
-            "American",
-            "Chinese",
-            "Italian",
-            "Greek",
-            "Indian",
-        ]
-        difficulty_levels = [
-            "Easy",
-            "Hard",
-            "Intermediate",
-        ]
-        difficulty =  random.choice(difficulty_levels)
-        cuisine =  random.choice(top_5_cuisines)
-        duration = random.randrange(10, 240 + 10, 10)
+        top_5_cuisines = ["American", "Chinese", "Greek", "Indian", "Italian"]
+        difficulty_levels = ["Easy", "Intermediate", "Hard"]
+        difficulty  = random.choice(difficulty_levels)
+        cuisine     = random.choice(top_5_cuisines)
+        duration    = random.randrange(10, 241, 10)
 
         try:
             conn.start_transaction()
 
-            # 3a. Insert into Recipes.
-            # We only supply Name, Instructions, Image_URL. The rest (Duration, Difficulty, Cuisine, Servings) default to NULL.
+            # 3a. Insert into Recipes with ADMIN user
             insert_recipe_sql = """
-                INSERT INTO Recipes (Name, Duration, Difficulty, Cuisine, Instructions, Image_URL)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO Recipes
+                  (User_ID, Name, Duration, Difficulty, Cuisine, Instructions, Image_URL)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
-            cursor.execute(insert_recipe_sql, (name, duration, difficulty, cuisine, instructions, image_url))
+            cursor.execute(
+                insert_recipe_sql,
+                (ADMIN_USER_ID, name, duration, difficulty, cuisine, instructions, image_url)
+            )
             recipe_id = cursor.lastrowid
 
-            # 3b. Parse Cleaned_Ingredients: assume string representation of Python list
+            # 3b. Parse Cleaned_Ingredients
             raw = row['Cleaned_Ingredients']
-            ing_list = []
             if pd.isna(raw):
                 ing_list = []
             else:
-                # Try to parse. If it's e.g. "['a', 'b', ...]" or JSON-like
                 try:
                     ing_list = ast.literal_eval(raw)
                     if not isinstance(ing_list, list):
                         raise ValueError
                 except Exception:
-                    # fallback: if comma-separated string
-                    # split on comma, but this is brittle
                     ing_list = [s.strip() for s in str(raw).split(',') if s.strip()]
 
-            # For each ingredient string:
             for ing_str in ing_list:
                 qty, unit, ing_name = parse_ingredient(ing_str)
-                # Normalize ing_name for lookup: lowercase, strip
                 key = ing_name.lower()
                 if not key:
                     continue
@@ -176,7 +138,6 @@ def main():
                 # 3b.i. Get or create Ingredient_ID
                 ing_id = ingredient_cache.get(key)
                 if ing_id is None:
-                    # Try inserting
                     try:
                         cursor.execute(
                             "INSERT INTO Ingredients (Name) VALUES (%s)",
@@ -185,14 +146,13 @@ def main():
                         ing_id = cursor.lastrowid
                         ingredient_cache[key] = ing_id
                     except IntegrityError:
-                        # Likely another process inserted concurrently, or duplicate
                         cursor.execute(
                             "SELECT Ingredient_ID FROM Ingredients WHERE LOWER(Name)=%s",
                             (key,)
                         )
-                        result = cursor.fetchone()
-                        if result:
-                            ing_id = result[0]
+                        res = cursor.fetchone()
+                        if res:
+                            ing_id = res[0]
                             ingredient_cache[key] = ing_id
                         else:
                             print(f"Warning: could not insert or find ingredient '{ing_name}'")
@@ -201,10 +161,9 @@ def main():
                         print(f"Warning: error inserting ingredient '{ing_name}': {e}")
                         continue
 
-                # 3b.ii. Insert into Recipe_Ingredients
-                # Use raw qty/unit or NULL if None
-                qty_val = qty if qty is not None else None
-                unit_val = unit if unit is not None else None
+                # 3b.ii. Insert into Recipe_Ingredients with defaults
+                qty_val  = qty  if qty  is not None else '1'
+                unit_val = unit if unit is not None else 'count'
                 try:
                     cursor.execute(
                         """
@@ -216,12 +175,10 @@ def main():
                     )
                 except IntegrityError:
                     pass
-
                 except Exception as e:
                     print(f"Warning: could not insert recipe_ingredient for recipe {recipe_id}, ing {ing_id}: {e}")
 
             conn.commit()
-            print(f"Inserted recipe '{name}' (ID={recipe_id}) with {len(ing_list)} ingredients")
 
         except Exception as e:
             conn.rollback()
@@ -249,10 +206,7 @@ def clean_database():
 
     cursor = conn.cursor()
     try:
-        # Disable foreign key checks
         cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
-
-        # Drop tables in dependency order
         tables = [
             "Recipe_Ingredients",
             "CookList_Recipes",
@@ -270,12 +224,9 @@ def clean_database():
                 print(f"Dropped table {tbl}")
             except mysql.connector.Error as e:
                 print(f"Warning: could not drop {tbl}: {e}")
-
-        # Re-enable foreign key checks
         cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
         conn.commit()
         print("Database cleaned: all Cookify tables dropped.")
-
     except Exception as e:
         conn.rollback()
         print("Error during cleaning:", e)

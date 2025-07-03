@@ -140,6 +140,15 @@ def reset_and_create_tables():
             )
         """)
 
+        # ──────────────── Indexes ────────────────
+        # speed up recipe name lookups
+        cursor.execute("CREATE INDEX idx_recipes_name ON Recipes (Name);")
+        # speed up ingredient name lookups
+        cursor.execute("CREATE INDEX idx_ingredients_name ON Ingredients (Name);")
+        # speed up joins/filtering on Recipe_Ingredients
+        cursor.execute("CREATE INDEX idx_ri_recipe ON Recipe_Ingredients (Recipe_ID);")
+        cursor.execute("CREATE INDEX idx_ri_ingredient ON Recipe_Ingredients (Ingredient_ID);")
+
         connection.commit()
         print("Database reset and tables recreated successfully!")
 

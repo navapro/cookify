@@ -128,7 +128,9 @@ CREATE TRIGGER CreateLikedRecipes
 AFTER INSERT ON Users
 FOR EACH ROW
 	BEGIN
-		INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (NEW.User_ID, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
+    IF ((SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') = 0) THEN
+		  INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (NEW.User_ID, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
+    END IF;
 	END; //
 
 -- trigger for rejecting when a user attempts to create a 'Liked Recipes' cooklist on their own
@@ -179,4 +181,4 @@ INSERT INTO Recipe_Likes (User_ID, Recipe_ID) VALUES
 SELECT * FROM Cooklist_Recipes WHERE Cooklist_ID = (SELECT Cooklist_ID FROM Cooklists WHERE User_ID = '6' AND Name = 'Liked Recipes');
 
 -- attempting to create a new Liked Recipes Cooklist for Wayne (which gives an error)
-INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (6, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
+-- INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (6, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);

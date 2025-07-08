@@ -1,7 +1,6 @@
 from flask import Blueprint, jsonify, request
 from extensions import db
 from sqlalchemy import text
-from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
 users_bp = Blueprint('users', __name__)
@@ -128,8 +127,6 @@ def create_user():
         if not name or not email or not password:
             return jsonify({"error": "Name, email, and password are required"}), 400
 
-        hashed_password = generate_password_hash(password)
-
         email_check = db.session.execute(
             text("SELECT User_ID FROM Users WHERE Email = :email"),
             {"email": email}
@@ -140,7 +137,7 @@ def create_user():
 
         result = db.session.execute(
             text("INSERT INTO Users (Name, Email, Password, Cookify_Level) VALUES (:name, :email, :password, :cookify_level)"),
-            {"name": name, "email": email, "password": hashed_password, "cookify_level": cookify_level}
+            {"name": name, "email": email, "password": password, "cookify_level": cookify_level}
         )
         db.session.commit()
 
@@ -173,9 +170,9 @@ def login_user():
         if not user:
             return jsonify({"error": "Invalid credentials"}), 401
 
-        hashed_password_from_db = user[3]
+        stored_password = user[3]
 
-        if check_password_hash(hashed_password_from_db, password):
+        if stored_password == password:
             access_token = create_access_token(identity=user[0])
             return jsonify({"message": "Login successful", "user": {"id": user[0], "name": user[1], "email": user[2]}, "access_token": access_token}), 200
         else:

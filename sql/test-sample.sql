@@ -120,3 +120,37 @@ WHERE
 
 -- List all columns from Recipes
 SELECT * FROM Recipes;
+
+-- feature 5: trigger to update liked cooklists
+-- creating trigger, assumes all users have a liked recipes playlist by default
+delimiter //
+CREATE TRIGGER LikedRecipes
+AFTER INSERT ON Recipe_Likes
+FOR EACH ROW
+	BEGIN
+		INSERT INTO Cooklist_Recipes VALUES ((SELECT Cooklist_ID FROM Cooklists WHERE User_ID = '6' AND Name = 'Liked Recipes'), NEW.Recipe_ID, NEW.Liked_At);
+	END; //
+
+-- creating user and their Liked Recipes cooklist
+INSERT INTO Users (Name, Email, Password, Date_of_Birth, Points, Cookify_Level) VALUES
+('Wayne Ju', 'w4ju@uwaterloo.ca', '$2b$10$hashedpassword1', '2005-09-11', 45, '🏠 Restaurant Owner');
+
+INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES
+(6, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
+
+-- adding recipes to like (totally not reused from feature 2)
+INSERT INTO Recipes (Recipe_ID, User_ID, Name, Duration, Difficulty, Cuisine, Instructions, Servings, Image_URL) VALUES
+(101, 1, 'Rosemary Focaccia', 120, 'Medium', 'Italian', 'cook good. good cook.', 1, 'very real link'),
+(102, 1, 'Tamagoyaki', 15, 'Medium', 'Japanese', 'also cook good. please.', 3, 'slightly real link'),
+(103, 2, 'Okonomiyaki', 30, 'Medium', 'Japanese', 'cook good (optional)', 12, 'very fake link'),
+(104, 3, 'Fried Rice', 15, 'Easy', 'Chinese', 'a (blank) fried this rice!?!?!?', 1, 'very real link'),
+(105, 4, 'Croissants', 300, 'Hard', 'French', 'hon hon hon', 6, 'very real link');
+
+-- liking recipes
+INSERT INTO Recipe_Likes (User_ID, Recipe_ID) VALUES
+(6, 104),
+(6, 105),
+(6, 102);
+
+-- viewing liked recipes
+SELECT * FROM Cooklist_Recipes WHERE Cooklist_ID = (SELECT Cooklist_ID FROM Cooklists WHERE User_ID = '6' AND Name = 'Liked Recipes');

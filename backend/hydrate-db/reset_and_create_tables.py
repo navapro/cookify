@@ -16,6 +16,7 @@ def reset_and_create_tables():
         "database": config.MYSQL_DB,
         "charset": "utf8mb4",
         "use_unicode": True,
+        "port": config.MYSQL_PORT
     }
 
     tables = [

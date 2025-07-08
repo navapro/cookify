@@ -119,3 +119,73 @@ def get_user_cooklists(user_id):
         return jsonify(cooklists)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@cooklists_bp.route('/', methods=['POST'])
+def create_cooklist():
+    try:
+        data = request.get_json()
+        name = data.get('name')
+        description = data.get('description', '')
+        user_id = data.get('user_id')
+        
+        if not name or not user_id:
+            return jsonify({"error": "Name and user_id are required"}), 400
+        
+        # Insert new cooklist
+        result = db.session.execute(
+            text("""
+                INSERT INTO CookLists (User_ID, Name, Description, Is_Public, Created_At, Updated_At)
+                VALUES (:user_id, :name, :description, 0, NOW(), NOW())
+            """),
+            {"user_id": user_id, "name": name, "description": description}
+        )
+        db.session.commit()
+        
+        # Get the created cooklist ID
+        cooklist_id = result.lastrowid
+        
+        return jsonify({
+            "id": cooklist_id,
+            "name": name,
+            "description": description,
+            "message": "Cooklist created successfully"
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@cooklists_bp.route('/<int:cooklist_id>/recipes', methods=['POST'])
+def add_recipe_to_cooklist(cooklist_id):
+    try:
+        data = request.get_json()
+        recipe_id = data.get('recipe_id')
+        
+        if not recipe_id:
+            return jsonify({"error": "recipe_id is required"}), 400
+        
+        # Check if recipe is already in the cooklist
+        existing = db.session.execute(
+            text("""
+                SELECT * FROM CookList_Recipes 
+                WHERE CookList_ID = :cooklist_id AND Recipe_ID = :recipe_id
+            """),
+            {"cooklist_id": cooklist_id, "recipe_id": recipe_id}
+        ).fetchone()
+        
+        if existing:
+            return jsonify({"error": "Recipe already exists in this cooklist"}), 400
+        
+        # Add recipe to cooklist
+        db.session.execute(
+            text("""
+                INSERT INTO CookList_Recipes (CookList_ID, Recipe_ID)
+                VALUES (:cooklist_id, :recipe_id)
+            """),
+            {"cooklist_id": cooklist_id, "recipe_id": recipe_id}
+        )
+        db.session.commit()
+        
+        return jsonify({"message": "Recipe added to cooklist successfully"}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { RecipeCard } from "@/components/RecipeCard";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { getUser } from "@/utils/auth";
-import { getUserDetails, getUserStats, getUserRecipes, getUserCookLists, type User, type UserStats, type Recipe } from "@/services/api";
+import { getUserDetails, getUserStats, getUserRecipes, getUserCookLists, getCookList, type User, type UserStats, type Recipe } from "@/services/api";
 
 
 // Helper function to convert cookify level to title
@@ -84,14 +84,8 @@ const Profile = () => {
   const handleCookListClick = async (cookList: any) => {
     try {
       // Fetch detailed cooklist data with recipes
-      const response = await fetch(`http://localhost:5001/api/cooklists/${cookList.id}`);
-      if (response.ok) {
-        const detailedCookList = await response.json();
-        setSelectedCookList(detailedCookList);
-      } else {
-        console.error('Failed to fetch cooklist details');
-        setSelectedCookList(cookList);
-      }
+      const detailedCookList = await getCookList(cookList.id);
+      setSelectedCookList(detailedCookList);
     } catch (error) {
       console.error('Error fetching cooklist details:', error);
       setSelectedCookList(cookList);

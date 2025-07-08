@@ -242,6 +242,52 @@ export const getUserCookLists = async (userId: number) => {
   return response.json();
 };
 
+export const createCookList = async (name: string, description: string = "", userId: number) => {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/cooklists/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify({ name, description, user_id: userId }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to create cooklist");
+  }
+
+  return response.json();
+};
+
+export const addRecipeToCookList = async (cooklistId: number, recipeId: number) => {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/cooklists/${cooklistId}/recipes`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify({ recipe_id: recipeId }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to add recipe to cooklist");
+  }
+
+  return response.json();
+};
+
 // Shopping Lists
 export const getShoppingLists = async (): Promise<ShoppingList[]> => {
   const token = localStorage.getItem("access_token");

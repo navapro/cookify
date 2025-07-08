@@ -10,28 +10,44 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { createCookList } from "@/services/api";
+import { getUser } from "@/utils/auth";
 
 interface CreateCooklistDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCooklistCreated?: () => void;
 }
 
-export const CreateCooklistDialog = ({ open, onOpenChange }: CreateCooklistDialogProps) => {
+export const CreateCooklistDialog = ({ open, onOpenChange, onCooklistCreated }: CreateCooklistDialogProps) => {
   const [cooklistName, setCooklistName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const currentUser = getUser();
 
-  const handleCreate = () => {
-    if (cooklistName.trim()) {
-      console.log(`Creating cooklist: "${cooklistName}"`);
-      
-      // Show success toast
-      toast({
-        title: "Cooklist Created Successfully! 📚",
-        description: `"${cooklistName}" is ready for your culinary collection!`,
-      });
-      
-      setCooklistName("");
-      onOpenChange(false);
+  const handleCreate = async () => {
+    if (cooklistName.trim() && currentUser) {
+      setIsLoading(true);
+      try {
+        await createCookList(cooklistName.trim(), "", currentUser.id);
+        
+        toast({
+          title: "Cooklist Created Successfully! 📚",
+          description: `"${cooklistName}" is ready for your culinary collection!`,
+        });
+        
+        setCooklistName("");
+        onOpenChange(false);
+        onCooklistCreated?.();
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to create cooklist",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -74,10 +90,10 @@ export const CreateCooklistDialog = ({ open, onOpenChange }: CreateCooklistDialo
             </Button>
             <Button
               onClick={handleCreate}
-              disabled={!cooklistName.trim()}
+              disabled={!cooklistName.trim() || isLoading}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white"
             >
-              Create
+              {isLoading ? "Creating..." : "Create"}
             </Button>
           </div>
         </div>

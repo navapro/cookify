@@ -167,6 +167,7 @@ python hydrate-db.py
 
 - **`hydrate-db.py`**
   Reads `recipes.csv` and bulk‑loads its contents into the `Recipes` table.
+  `recipes.csv` has all the data from our Kaggle dataset at `https://www.kaggle.com/datasets/pes12017000148/food-ingredients-and-recipe-dataset-with-images?source=post_page-----92b6660267d7--------------------------------------- `
 
 ### 💡 Tips
 

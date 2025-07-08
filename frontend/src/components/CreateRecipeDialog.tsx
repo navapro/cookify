@@ -22,6 +22,7 @@ import { createRecipe } from "@/services/api";
 interface CreateRecipeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onRecipeCreated?: () => void;
 }
 
 const cuisines = [
@@ -47,12 +48,16 @@ const durations = [
   { label: "All Day (120+ min)", value: 120 },
 ];
 
+const difficulties = ["Easy", "Intermediate", "Hard"];
+
 export const CreateRecipeDialog = ({
   open,
   onOpenChange,
+  onRecipeCreated,
 }: CreateRecipeDialogProps) => {
   const [title, setTitle] = useState("");
   const [cuisine, setCuisine] = useState("");
+  const [difficulty, setDifficulty] = useState("");
   const [duration, setDuration] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [ingredients, setIngredients] = useState<string[]>([""]);
@@ -88,10 +93,10 @@ export const CreateRecipeDialog = ({
 
   const handleSubmit = async () => {
     // Basic validation
-    if (!title.trim() || !cuisine || !duration) {
+    if (!title.trim() || !cuisine || !difficulty || !duration) {
       toast({
         title: "Missing required fields",
-        description: "Please fill in title, cuisine, and duration.",
+        description: "Please fill in title, cuisine, difficulty, and duration.",
         variant: "destructive",
       });
       return;
@@ -118,7 +123,7 @@ export const CreateRecipeDialog = ({
     };
 
     try {
-      const result = await createRecipe({ ...payload, difficulty: "Easy" });
+      const result = await createRecipe({ ...payload, difficulty });
       const newId = result.recipe_id;
       toast({
         title: "Recipe Created!",
@@ -127,11 +132,21 @@ export const CreateRecipeDialog = ({
       // Reset form
       setTitle("");
       setCuisine("");
+      setDifficulty("");
       setDuration("");
       setImageUrl("");
       setIngredients([""]);
       setInstructions([""]);
       onOpenChange(false);
+      // Trigger refresh of recipes if callback provided
+      if (onRecipeCreated) {
+        onRecipeCreated();
+      } else {
+        // If no callback provided and we're on profile page, refresh the page
+        if (window.location.pathname === '/profile') {
+          window.location.reload();
+        }
+      }
     } catch (err: any) {
       toast({
         title: "Error creating recipe",
@@ -192,8 +207,8 @@ export const CreateRecipeDialog = ({
             </div>
           </div>
 
-          {/* Cuisine and Duration */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Cuisine, Difficulty, and Duration */}
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label className="text-blue-800 font-medium">Cuisine Type</Label>
               <Select value={cuisine} onValueChange={setCuisine}>
@@ -204,6 +219,22 @@ export const CreateRecipeDialog = ({
                   {cuisines.map((c) => (
                     <SelectItem key={c} value={c}>
                       {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-blue-800 font-medium">Difficulty</Label>
+              <Select value={difficulty} onValueChange={setDifficulty}>
+                <SelectTrigger className="border-blue-200 focus:border-blue-400">
+                  <SelectValue placeholder="Select difficulty..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {difficulties.map((d) => (
+                    <SelectItem key={d} value={d}>
+                      {d}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -323,7 +354,7 @@ export const CreateRecipeDialog = ({
           <div className="flex gap-2 pt-4">
             <Button
               onClick={handleSubmit}
-              disabled={!title || !cuisine || !duration || isSubmitting}
+              disabled={!title || !cuisine || !difficulty || !duration || isSubmitting}
               className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
             >
               {isSubmitting ? "Creating..." : "Create Recipe"}

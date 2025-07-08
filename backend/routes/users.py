@@ -17,7 +17,7 @@ def get_all_users():
 @users_bp.route('/<int:user_id>', methods=['GET'])
 @jwt_required()
 def get_user(user_id):
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
     if current_user_id != user_id:
         return jsonify({"error": "Unauthorized access"}), 403
 
@@ -42,7 +42,7 @@ def get_user(user_id):
 @users_bp.route('/<int:user_id>/stats', methods=['GET'])
 @jwt_required()
 def get_user_stats(user_id):
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
     if current_user_id != user_id:
         return jsonify({"error": "Unauthorized access"}), 403
 
@@ -68,7 +68,7 @@ def get_user_stats(user_id):
 
         # Count cooklists created by user
         cooklist_count_result = db.session.execute(
-            text("SELECT COUNT(*) FROM CookList WHERE User_ID = :user_id"),
+            text("SELECT COUNT(*) FROM CookLists WHERE User_ID = :user_id"),
             {"user_id": current_user_id}
         )
         cooklist_count = cooklist_count_result.fetchone()[0]
@@ -85,7 +85,7 @@ def get_user_stats(user_id):
 @users_bp.route('/<int:user_id>/activity', methods=['POST'])
 @jwt_required()
 def add_user_activity(user_id):
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
     if current_user_id != user_id:
         return jsonify({"error": "Unauthorized access"}), 403
 
@@ -142,7 +142,7 @@ def create_user():
         db.session.commit()
 
         new_user_id = result.lastrowid
-        access_token = create_access_token(identity=new_user_id)
+        access_token = create_access_token(identity=str(new_user_id))
         return jsonify({"message": "User created successfully", "id": new_user_id, "access_token": access_token}), 201
     except Exception as e:
         db.session.rollback()
@@ -173,7 +173,7 @@ def login_user():
         stored_password = user[3]
 
         if stored_password == password:
-            access_token = create_access_token(identity=user[0])
+            access_token = create_access_token(identity=str(user[0]))
             return jsonify({"message": "Login successful", "user": {"id": user[0], "name": user[1], "email": user[2]}, "access_token": access_token}), 200
         else:
             return jsonify({"error": "Invalid credentials"}), 401

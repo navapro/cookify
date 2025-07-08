@@ -2,6 +2,7 @@
 from flask import Blueprint, jsonify, request
 from extensions import db
 from sqlalchemy import text
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 recipes_bp = Blueprint('recipes', __name__)
 
@@ -10,7 +11,7 @@ ADD_RECIPE_SQL = """
 INSERT INTO Recipes
     (Name, Duration, Difficulty, Cuisine, Instructions, Image_URL, User_ID)
 VALUES
-    (:name, :duration, :difficulty, :cuisine, :instructions, :image_url);
+    (:name, :duration, :difficulty, :cuisine, :instructions, :image_url, :user_id);
 """
 
 UPDATE_RECIPE_SQL = """
@@ -53,6 +54,17 @@ LEFT JOIN Recipe_Ingredients ri ON r.Recipe_ID = ri.Recipe_ID
 LEFT JOIN Ingredients i ON ri.Ingredient_ID = i.Ingredient_ID
 WHERE r.Recipe_ID = :id
 GROUP BY r.Recipe_ID;
+"""
+
+GET_USER_RECIPES_SQL = """
+SELECT r.Recipe_ID, r.Name, r.Duration, r.Difficulty, r.Cuisine, r.Instructions, r.Image_URL,
+       GROUP_CONCAT(i.Name) AS Ingredients
+FROM Recipes r
+LEFT JOIN Recipe_Ingredients ri ON r.Recipe_ID = ri.Recipe_ID
+LEFT JOIN Ingredients i ON ri.Ingredient_ID = i.Ingredient_ID
+WHERE r.User_ID = :user_id
+GROUP BY r.Recipe_ID
+ORDER BY r.Recipe_ID DESC;
 """
 
 @recipes_bp.route('/', methods=['GET'])
@@ -98,7 +110,11 @@ def get_recipe(recipe_id):
         return jsonify({"error": str(e)}), 500
 
 @recipes_bp.route('/', methods=['POST'])
+@jwt_required()
 def add_recipe():
+    # Get the current user from JWT token
+    current_user_id = int(get_jwt_identity())
+    
     data = request.get_json() or {}
     required = ['name', 'duration', 'difficulty', 'cuisine', 'instructions']
     missing = [f for f in required if f not in data]
@@ -112,6 +128,7 @@ def add_recipe():
         "cuisine": data["cuisine"],
         "instructions": data["instructions"],
         "image_url": data.get("image_url"),
+        "user_id": current_user_id,
     }
     try:
         result = db.session.execute(text(ADD_RECIPE_SQL), params)
@@ -148,4 +165,25 @@ def update_recipe(recipe_id):
         return jsonify({"message": "Recipe updated", "recipe_id": recipe_id}), 200
     except Exception as e:
         db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@recipes_bp.route('/user/<int:user_id>', methods=['GET'])
+def get_user_recipes(user_id):
+    try:
+        result = db.session.execute(text(GET_USER_RECIPES_SQL), {"user_id": user_id})
+        recipes = []
+        for row in result:
+            recipes.append({
+                "id": row[0],
+                "title": row[1],  # Using 'title' to match frontend Recipe interface
+                "duration": row[2],
+                "difficulty": row[3],
+                "cuisine": row[4],
+                "instructions": row[5].split('\n') if row[5] else [],
+                "image": row[6] or "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=500&h=300",
+                "ingredients": row[7].split(',') if row[7] else [],
+                "isMyRecipe": True
+            })
+        return jsonify(recipes), 200
+    except Exception as e:
         return jsonify({"error": str(e)}), 500

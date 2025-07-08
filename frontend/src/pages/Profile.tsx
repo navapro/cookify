@@ -5,162 +5,56 @@ import { Button } from "@/components/ui/button";
 import { RecipeCard } from "@/components/RecipeCard";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { getUser } from "@/utils/auth";
-import { getUserStats, type UserStats } from "@/services/api";
+import { getUserDetails, getUserStats, getUserRecipes, getUserCookLists, type User, type UserStats, type Recipe } from "@/services/api";
 
-// Mock data - in a real app this would come from a database
-const mockCookLists = [
-  { 
-    id: 1, 
-    name: "Weekend Meal Prep", 
-    recipeCount: 5,
-    recipes: [
-      {
-        id: 101,
-        title: "Gordon's Perfect Scrambled Eggs",
-        image: "https://images.unsplash.com/photo-1506084868230-bb9d95c24759?auto=format&fit=crop&w=500&h=300",
-        duration: 10,
-        cuisine: "British",
-        ingredients: ["3 eggs", "butter", "crème fraîche", "chives", "salt"],
-        instructions: ["Crack eggs into cold pan", "Add butter", "Stir constantly over low heat", "Finish with crème fraîche"],
-        isMyRecipe: true
-      },
-      {
-        id: 102,
-        title: "Remy's Ratatouille",
-        image: "https://images.unsplash.com/photo-1572441713132-51c75654db73?auto=format&fit=crop&w=500&h=300",
-        duration: 45,
-        cuisine: "French",
-        ingredients: ["eggplant", "zucchini", "bell peppers", "tomatoes", "herbs"],
-        instructions: ["Slice vegetables thin", "Arrange in spiral", "Season with herbs", "Bake until tender"],
-        isMyRecipe: false
-      }
-    ]
-  },
-  { 
-    id: 2, 
-    name: "Quick Dinners", 
-    recipeCount: 8,
-    recipes: [
-      {
-        id: 201,
-        title: "5-Minute Pasta Aglio e Olio",
-        image: "https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?auto=format&fit=crop&w=500&h=300",
-        duration: 15,
-        cuisine: "Italian",
-        ingredients: ["spaghetti", "garlic", "olive oil", "red pepper flakes", "parsley"],
-        instructions: ["Boil pasta", "Sauté garlic in oil", "Toss with pasta", "Add herbs"],
-        isMyRecipe: true
-      }
-    ]
-  },
-  { 
-    id: 3, 
-    name: "Holiday Favorites", 
-    recipeCount: 3,
-    recipes: [
-      {
-        id: 301,
-        title: "Christmas Beef Wellington",
-        image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=500&h=300",
-        duration: 120,
-        cuisine: "British",
-        ingredients: ["beef tenderloin", "puff pastry", "mushrooms", "prosciutto"],
-        instructions: ["Sear beef", "Wrap in mushroom duxelles", "Encase in pastry", "Bake until golden"],
-        isMyRecipe: true
-      }
-    ]
-  },
-  { 
-    id: 4, 
-    name: "Healthy Options", 
-    recipeCount: 12,
-    recipes: [
-      {
-        id: 401,
-        title: "Mediterranean Quinoa Bowl",
-        image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=500&h=300",
-        duration: 25,
-        cuisine: "Mediterranean",
-        ingredients: ["quinoa", "cucumber", "tomatoes", "feta", "olives"],
-        instructions: ["Cook quinoa", "Chop vegetables", "Mix with dressing", "Top with feta"],
-        isMyRecipe: false
-      }
-    ]
-  },
-];
 
-// Sample recipes for the carousel
-const myRecipes = [
-  {
-    id: 501,
-    title: "Gordon's Perfect Scrambled Eggs",
-    image: "https://images.unsplash.com/photo-1506084868230-bb9d95c24759?auto=format&fit=crop&w=500&h=300",
-    duration: 10,
-    cuisine: "British",
-    ingredients: ["3 eggs", "butter", "crème fraîche", "chives", "salt"],
-    instructions: ["Crack eggs into cold pan", "Add butter", "Stir constantly over low heat", "Finish with crème fraîche"],
-    isMyRecipe: true
-  },
-  {
-    id: 502,
-    title: "5-Minute Pasta Aglio e Olio",
-    image: "https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?auto=format&fit=crop&w=500&h=300",
-    duration: 15,
-    cuisine: "Italian",
-    ingredients: ["spaghetti", "garlic", "olive oil", "red pepper flakes", "parsley"],
-    instructions: ["Boil pasta", "Sauté garlic in oil", "Toss with pasta", "Add herbs"],
-    isMyRecipe: true
-  },
-  {
-    id: 503,
-    title: "Christmas Beef Wellington",
-    image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=500&h=300",
-    duration: 120,
-    cuisine: "British",
-    ingredients: ["beef tenderloin", "puff pastry", "mushrooms", "prosciutto"],
-    instructions: ["Sear beef", "Wrap in mushroom duxelles", "Encase in pastry", "Bake until golden"],
-    isMyRecipe: true
-  },
-  {
-    id: 504,
-    title: "Classic French Croissants",
-    image: "https://images.unsplash.com/photo-1555507036-ab794f0880f2?auto=format&fit=crop&w=500&h=300",
-    duration: 240,
-    cuisine: "French",
-    ingredients: ["flour", "butter", "yeast", "milk", "sugar"],
-    instructions: ["Make dough", "Fold butter", "Roll and shape", "Proof and bake"],
-    isMyRecipe: true
-  },
-  {
-    id: 505,
-    title: "Spicy Thai Pad Thai",
-    image: "https://images.unsplash.com/photo-1559847844-d5d6b5a32095?auto=format&fit=crop&w=500&h=300",
-    duration: 30,
-    cuisine: "Thai",
-    ingredients: ["rice noodles", "shrimp", "bean sprouts", "tamarind", "fish sauce"],
-    instructions: ["Soak noodles", "Stir fry ingredients", "Add sauce", "Garnish with peanuts"],
-    isMyRecipe: true
-  }
-];
+// Helper function to convert cookify level to title
+const getCookifyLevelTitle = (level: number): string => {
+  if (level >= 100) return "👑🐭 Remy the Rat";
+  if (level >= 80) return "🔥 Gordon Ramsey";
+  if (level >= 60) return "🏠 Restaurant Owner";
+  if (level >= 40) return "👨‍🍳 Chef de Cuisine";
+  if (level >= 25) return "🧂 Sous Chef";
+  if (level >= 15) return "🧑‍🍳 Commis Chef";
+  if (level >= 5) return "🔪 Prep Cook";
+  if (level >= 1) return "🧽 Dishwasher";
+  return "🐀 Street Rat";
+};
 
 const Profile = () => {
   const navigate = useNavigate();
-  const [selectedCookList, setSelectedCookList] = useState<typeof mockCookLists[0] | null>(null);
+  const [selectedCookList, setSelectedCookList] = useState<any | null>(null);
+  const [userDetails, setUserDetails] = useState<User | null>(null);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [userRecipes, setUserRecipes] = useState<Recipe[]>([]);
+  const [userCookLists, setUserCookLists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Get the current user's information
   const currentUser = getUser();
-  const userName = currentUser?.name || "Chef";
+  const userName = userDetails?.name || currentUser?.name || "Chef";
 
   useEffect(() => {
-    const fetchUserStats = async () => {
+    const fetchUserData = async () => {
       if (currentUser?.id) {
         try {
-          const stats = await getUserStats(currentUser.id);
-          setUserStats(stats);
+          // Fetch user details, stats, recipes, and cooklists
+          const [details, stats, recipes, cookLists] = await Promise.all([
+            getUserDetails(currentUser.id),
+            getUserStats(currentUser.id),
+            getUserRecipes(currentUser.id),
+            getUserCookLists(currentUser.id)
+          ]);
+          
+          setUserDetails(details);
+          setUserStats({
+            ...stats,
+            cookify_level: getCookifyLevelTitle(Number(details.level))
+          });
+          setUserRecipes(recipes);
+          setUserCookLists(cookLists);
         } catch (error) {
-          console.error("Failed to fetch user stats:", error);
+          console.error("Failed to fetch user data:", error);
           // Set default values if API fails
           setUserStats({
             points: 0,
@@ -176,7 +70,7 @@ const Profile = () => {
       }
     };
 
-    fetchUserStats();
+    fetchUserData();
   }, [currentUser?.id]);
 
   const handleBackClick = () => {
@@ -187,8 +81,21 @@ const Profile = () => {
     }
   };
 
-  const handleCookListClick = (cookList: typeof mockCookLists[0]) => {
-    setSelectedCookList(cookList);
+  const handleCookListClick = async (cookList: any) => {
+    try {
+      // Fetch detailed cooklist data with recipes
+      const response = await fetch(`http://localhost:5001/api/cooklists/${cookList.id}`);
+      if (response.ok) {
+        const detailedCookList = await response.json();
+        setSelectedCookList(detailedCookList);
+      } else {
+        console.error('Failed to fetch cooklist details');
+        setSelectedCookList(cookList);
+      }
+    } catch (error) {
+      console.error('Error fetching cooklist details:', error);
+      setSelectedCookList(cookList);
+    }
   };
 
   // Chef level styling based on level title
@@ -260,7 +167,8 @@ const Profile = () => {
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold text-blue-800">Chef {userName}</h2>
-                    <p className="text-blue-600 italic">"Anyone can cook, but only the fearless can be great!"</p>
+                    <p className="text-blue-600 text-sm">{userDetails?.email}</p>
+                    <p className="text-blue-600 italic mt-1">"Anyone can cook, but only the fearless can be great!"</p>
                     <div className={`inline-flex items-center gap-2 mt-2 px-3 py-1 rounded-full ${chefLevelStyle.bgColor}`}>
                       <Award className="w-4 h-4" />
                       <span className={`text-sm font-medium ${chefLevelStyle.color}`}>{userStats?.cookify_level}</span>
@@ -272,7 +180,7 @@ const Profile = () => {
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
                     <div className="text-2xl font-bold text-blue-700">{userStats?.cookify_level || "🐀 Street Rat"}</div>
                     <div className="text-blue-600 text-sm">Chef Level</div>
-                    <div className="text-sm text-blue-500 mt-1">{userStats?.points || 0} points</div>
+                    <div className="text-sm text-blue-500 mt-1">{userDetails?.points || 0} points</div>
                   </div>
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
                     <div className="text-2xl font-bold text-blue-700">{userStats?.recipes_created || 0}</div>
@@ -289,17 +197,25 @@ const Profile = () => {
               <div className="mb-8">
                 <h3 className="text-xl font-bold text-blue-800 mb-4">My Latest Recipes</h3>
                 <div className="bg-white rounded-lg shadow-md p-6 border border-blue-100">
-                  <Carousel className="w-full">
-                    <CarouselContent className="-ml-2 md:-ml-4">
-                      {myRecipes.map((recipe) => (
-                        <CarouselItem key={recipe.id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
-                          <RecipeCard recipe={recipe} />
-                        </CarouselItem>
-                      ))}
-                    </CarouselContent>
-                    <CarouselPrevious className="left-2" />
-                    <CarouselNext className="right-2" />
-                  </Carousel>
+                  {userRecipes.length > 0 ? (
+                    <Carousel className="w-full">
+                      <CarouselContent className="-ml-2 md:-ml-4">
+                        {userRecipes.map((recipe: Recipe) => (
+                          <CarouselItem key={recipe.id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
+                            <RecipeCard recipe={recipe} />
+                          </CarouselItem>
+                        ))}
+                      </CarouselContent>
+                      <CarouselPrevious className="left-2" />
+                      <CarouselNext className="right-2" />
+                    </Carousel>
+                  ) : (
+                    <div className="text-center py-8 text-blue-600">
+                      <ChefHat className="w-12 h-12 mx-auto mb-4 text-blue-400" />
+                      <p className="text-lg font-medium mb-2">No recipes yet!</p>
+                      <p className="text-sm">Create your first recipe to see it here.</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -307,25 +223,36 @@ const Profile = () => {
               <div>
                 <h3 className="text-xl font-bold text-blue-800 mb-4">My Cook Lists</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {mockCookLists.map((cookList) => (
-                    <div
-                      key={cookList.id}
-                      onClick={() => handleCookListClick(cookList)}
-                      className="bg-white rounded-lg shadow-md p-6 border border-blue-100 hover:shadow-lg transition-all duration-200 cursor-pointer hover:bg-blue-50 group"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-semibold text-blue-800 group-hover:text-blue-900">
-                          {cookList.name}
-                        </h4>
-                        <span className="text-sm text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
-                          {cookList.recipeCount} recipes
-                        </span>
+                  {userCookLists.length > 0 ? (
+                    userCookLists.map((cookList) => (
+                      <div
+                        key={cookList.id}
+                        onClick={() => handleCookListClick(cookList)}
+                        className="bg-white rounded-lg shadow-md p-6 border border-blue-100 hover:shadow-lg transition-all duration-200 cursor-pointer hover:bg-blue-50 group"
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-semibold text-blue-800 group-hover:text-blue-900">
+                            {cookList.name}
+                          </h4>
+                          <span className="text-sm text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                            {cookList.recipeCount} recipes
+                          </span>
+                        </div>
+                        <p className="text-blue-600 text-sm">
+                          {cookList.description}
+                        </p>
+                        <p className="text-blue-500 text-xs mt-2 italic">
+                          Click to view recipes in this collection
+                        </p>
                       </div>
-                      <p className="text-blue-600 text-sm italic">
-                        Click to view recipes in this collection
-                      </p>
+                    ))
+                  ) : (
+                    <div className="col-span-full text-center py-8 text-blue-600">
+                      <ChefHat className="w-12 h-12 mx-auto mb-4 text-blue-400" />
+                      <p className="text-lg font-medium mb-2">No cook lists yet!</p>
+                      <p className="text-sm">Create your first cook list to organize your recipes.</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             </>

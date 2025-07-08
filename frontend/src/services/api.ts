@@ -98,6 +98,29 @@ export const register = async (name: string, email: string, password: string) =>
   return response.json();
 };
 
+// User Details
+export const getUserDetails = async (userId: number): Promise<User> => {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to fetch user details");
+  }
+
+  return response.json();
+};
+
 // User Statistics
 export const getUserStats = async (userId: number): Promise<UserStats> => {
   const token = localStorage.getItem("access_token");
@@ -135,10 +158,16 @@ export const getRecipes = async () => {
 
 // Create a new recipe
 export const createRecipe = async (recipeData) => {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
   const response = await fetch(`${API_BASE_URL}/recipes/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
     },
     body: JSON.stringify(recipeData),
   });
@@ -168,6 +197,17 @@ export const getRecipe = async (id: number) => {
   return response.json();
 };
 
+export const getUserRecipes = async (userId: number): Promise<Recipe[]> => {
+  const response = await fetch(`${API_BASE_URL}/recipes/user/${userId}`);
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to fetch user recipes");
+  }
+
+  return response.json();
+};
+
 // CookLists
 export const getCookLists = async () => {
   const response = await fetch(`${API_BASE_URL}/cooklists/`);
@@ -186,6 +226,17 @@ export const getCookList = async (id: number) => {
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || "Failed to fetch cooklist");
+  }
+
+  return response.json();
+};
+
+export const getUserCookLists = async (userId: number) => {
+  const response = await fetch(`${API_BASE_URL}/cooklists/user/${userId}`);
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to fetch user cooklists");
   }
 
   return response.json();

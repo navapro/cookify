@@ -12,7 +12,7 @@ class Config:
     MYSQL_USER = os.getenv('MYSQL_USER', 'root')
     MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD', 'Ocado')
     MYSQL_DB = os.getenv('MYSQL_DB', 'cookify')
-    MYSQL_PORT = int(os.getenv('MYSQL_PORT', 0))
+    MYSQL_PORT = int(os.getenv('MYSQL_PORT', 3306))
 
     # URL encode the password to handle special characters
     encoded_password = quote_plus(MYSQL_PASSWORD)

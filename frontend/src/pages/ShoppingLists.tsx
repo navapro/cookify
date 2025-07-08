@@ -1,5 +1,5 @@
 import { ShoppingListOverview } from "@/components/ShoppingListOverview";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export function ShoppingLists() {
   return (

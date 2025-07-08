@@ -34,6 +34,35 @@ export interface CookList {
   recipes: string[];
 }
 
+export interface ShoppingList {
+  id: number;
+  name: string;
+  cooklist_id?: number;
+  cooklist_name?: string;
+  created_at: string;
+  updated_at: string;
+  total_items: number;
+  purchased_items: number;
+}
+
+export interface ShoppingListItem {
+  ingredient_id: number;
+  name: string;
+  quantity: string;
+  is_purchased: boolean;
+  category: string;
+  price?: number;
+  added_at: string;
+}
+
+export interface ShoppingListDetail {
+  id: number;
+  name: string;
+  cooklist_id?: number;
+  cooklist_name?: string;
+  items: ShoppingListItem[];
+}
+
 // Authentication
 export const login = async (email: string, password: string) => {
   const response = await fetch(`${API_BASE_URL}/users/login`, {
@@ -157,6 +186,181 @@ export const getCookList = async (id: number) => {
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || "Failed to fetch cooklist");
+  }
+
+  return response.json();
+};
+
+// Shopping Lists
+export const getShoppingLists = async (): Promise<ShoppingList[]> => {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/shopping-lists/`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to fetch shopping lists");
+  }
+
+  return response.json();
+};
+
+export const getShoppingList = async (id: number): Promise<ShoppingListDetail> => {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/shopping-lists/${id}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to fetch shopping list");
+  }
+
+  return response.json();
+};
+
+export const createShoppingList = async (name: string, cooklistId?: number) => {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/shopping-lists/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify({ name, cooklist_id: cooklistId }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to create shopping list");
+  }
+
+  return response.json();
+};
+
+export const addItemToShoppingList = async (
+  shoppingListId: number,
+  ingredientId: number,
+  quantity: string
+) => {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/shopping-lists/${shoppingListId}/items`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify({ ingredient_id: ingredientId, quantity }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to add item to shopping list");
+  }
+
+  return response.json();
+};
+
+export const updateShoppingListItem = async (
+  shoppingListId: number,
+  ingredientId: number,
+  isPurchased: boolean,
+  quantity?: string
+) => {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
+  const body: any = { is_purchased: isPurchased };
+  if (quantity !== undefined) {
+    body.quantity = quantity;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/shopping-lists/${shoppingListId}/items/${ingredientId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to update shopping list item");
+  }
+
+  return response.json();
+};
+
+export const removeItemFromShoppingList = async (
+  shoppingListId: number,
+  ingredientId: number
+) => {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/shopping-lists/${shoppingListId}/items/${ingredientId}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to remove item from shopping list");
+  }
+
+  return response.json();
+};
+
+export const deleteShoppingList = async (shoppingListId: number) => {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/shopping-lists/${shoppingListId}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to delete shopping list");
   }
 
   return response.json();

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, BookOpen, User, LogOut } from "lucide-react";
+import { Plus, BookOpen, User, LogOut, ShoppingCart } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -23,6 +23,11 @@ const sidebarItems = [
     title: "Create Cooklist",
     icon: BookOpen,
     action: "create-cooklist",
+  },
+  {
+    title: "Shopping Lists",
+    icon: ShoppingCart,
+    action: "shopping-lists",
   },
   {
     title: "My Profile",
@@ -48,6 +53,8 @@ export function AppSidebar() {
       setCreateCooklistDialogOpen(true);
     } else if (action === "create-recipe") {
       setCreateRecipeDialogOpen(true);
+    } else if (action === "shopping-lists") {
+      navigate("/shopping-lists");
     } else if (action === "my-profile") {
       navigate("/profile");
     } else if (action === "logout") {

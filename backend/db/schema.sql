@@ -121,6 +121,30 @@ CREATE TABLE User_Activities (
   FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE
 ); 
 
+-- 10. Shopping Lists Table - User's shopping lists
+CREATE TABLE Shopping_Lists (
+  Shopping_List_ID INT AUTO_INCREMENT PRIMARY KEY,
+  User_ID INT NOT NULL,
+  Name VARCHAR(100) NOT NULL DEFAULT 'Shopping List',
+  CookList_ID INT, -- Optional: link to a specific cooklist
+  Created_At DATETIME DEFAULT CURRENT_TIMESTAMP,
+  Updated_At DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE,
+  FOREIGN KEY (CookList_ID) REFERENCES CookLists(CookList_ID) ON DELETE CASCADE
+);
+
+-- 11. Shopping List Items Table - Items in each shopping list
+CREATE TABLE Shopping_List_Items (
+  Shopping_List_ID INT NOT NULL,
+  Ingredient_ID INT NOT NULL,
+  Quantity VARCHAR(50),
+  Is_Purchased BOOLEAN DEFAULT FALSE,
+  Added_At DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (Shopping_List_ID, Ingredient_ID),
+  FOREIGN KEY (Shopping_List_ID) REFERENCES Shopping_Lists(Shopping_List_ID) ON DELETE CASCADE,
+  FOREIGN KEY (Ingredient_ID) REFERENCES Ingredients(Ingredient_ID)
+);
+
 -- Performance Indexes for faster queries
 CREATE INDEX idx_recipes_cuisine ON Recipes(Cuisine);
 CREATE INDEX idx_recipes_difficulty ON Recipes(Difficulty);
@@ -130,6 +154,9 @@ CREATE INDEX idx_ingredients_season ON Ingredients(Season);
 CREATE INDEX idx_users_points ON Users(Points);
 CREATE INDEX idx_recipe_likes_recipe ON Recipe_Likes(Recipe_ID);
 CREATE INDEX idx_cooklist_likes_cooklist ON CookList_Likes(CookList_ID);
+CREATE INDEX idx_shopping_lists_user ON Shopping_Lists(User_ID);
+CREATE INDEX idx_shopping_lists_cooklist ON Shopping_Lists(CookList_ID);
+CREATE INDEX idx_shopping_list_items_list ON Shopping_List_Items(Shopping_List_ID);
 
 -- Insert sample data for testing
 -- Sample users with different levels

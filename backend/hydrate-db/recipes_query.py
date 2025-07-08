@@ -1,15 +1,23 @@
 import mysql.connector
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).parent.parent))
+from config import Config
+config = Config()
+
+DB_CONFIG = {
+    "host": config.MYSQL_HOST,
+    "user": config.MYSQL_USER,
+    "password": config.MYSQL_PASSWORD,
+    "database": config.MYSQL_DB,
+    "charset": "utf8mb4",
+    "use_unicode": True,
+    "port": config.MYSQL_PORT
+}
 
 connection = mysql.connector.connect(**DB_CONFIG)
 cursor = connection.cursor()
-DB_CONFIG = {
-    "host": "127.0.0.1",
-    "user": "root",
-    "password": "password",
-    "database": "cookify",
-    "charset": "utf8mb4",
-    "use_unicode": True,
-}
 
 # RAW SQL QUERIES:
 ADD_RECIPE_SQL = """

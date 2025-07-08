@@ -128,7 +128,9 @@ CREATE TRIGGER CreateLikedRecipes
 AFTER INSERT ON Users
 FOR EACH ROW
 	BEGIN
-		INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (NEW.User_ID, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
+    IF ((SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') = 0) THEN
+		  INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (NEW.User_ID, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
+    END IF;
 	END; //
 
 -- trigger for rejecting when a user attempts to create a 'Liked Recipes' cooklist on their own
@@ -137,9 +139,9 @@ CREATE TRIGGER UniqueLikedCooklist
 BEFORE INSERT ON Cooklists
 FOR EACH ROW
 	BEGIN
-	  IF ((SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') > 0) THEN
-		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Only one Liked Recipes cooklist can exist!';
-	  END IF;
+		IF ((SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') > 0) THEN
+			SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Only one Liked Recipes cooklist can exist!';
+		END IF;
 	END; //
 
 -- creating trigger, assumes all users have a liked recipes cooklist by default
@@ -148,6 +150,9 @@ CREATE TRIGGER AddToLikedRecipes
 AFTER INSERT ON Recipe_Likes
 FOR EACH ROW
 	BEGIN
+		IF ((SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') = 0) THEN
+			INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (NEW.User_ID, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
+		END IF;
 		INSERT INTO Cooklist_Recipes VALUES ((SELECT Cooklist_ID FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes'), NEW.Recipe_ID, NEW.Liked_At);
 	END; //
 
@@ -176,4 +181,4 @@ INSERT INTO Recipe_Likes (User_ID, Recipe_ID) VALUES
 SELECT * FROM Cooklist_Recipes WHERE Cooklist_ID = (SELECT Cooklist_ID FROM Cooklists WHERE User_ID = '6' AND Name = 'Liked Recipes');
 
 -- attempting to create a new Liked Recipes Cooklist for Wayne (which gives an error)
-INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (6, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
+-- INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (6, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);

@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Clock, ChefHat, Plus } from "lucide-react";
+import { Clock, ChefHat, Plus, Heart } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { RecipeDialog } from "./RecipeDialog";
@@ -24,6 +24,7 @@ interface RecipeCardProps {
 export const RecipeCard = ({ recipe }: RecipeCardProps) => {
   const [recipeDialogOpen, setRecipeDialogOpen] = useState(false);
   const [cookListDialogOpen, setCookListDialogOpen] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
 
   const handleViewRecipe = () => {
     setRecipeDialogOpen(true);
@@ -31,6 +32,12 @@ export const RecipeCard = ({ recipe }: RecipeCardProps) => {
 
   const handleAddToCookList = () => {
     setCookListDialogOpen(true);
+  };
+
+  const handleLikeRecipe = () => {
+    setIsLiked(!isLiked);
+    // TODO: Add API call to like/unlike recipe
+    console.log(`Recipe ${recipe.title} ${isLiked ? 'unliked' : 'liked'}`);
   };
 
   return (
@@ -90,16 +97,27 @@ export const RecipeCard = ({ recipe }: RecipeCardProps) => {
         <CardFooter className="p-4 pt-0 flex gap-2">
           <button 
             onClick={handleViewRecipe}
-            className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 py-2 px-4 rounded-lg transition-colors duration-200 font-medium"
+            className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 py-2 px-3 rounded-lg transition-colors duration-200 font-medium text-sm"
           >
             View Recipe
           </button>
           <button 
             onClick={handleAddToCookList}
-            className="flex-1 bg-green-50 hover:bg-green-100 text-green-700 py-2 px-4 rounded-lg transition-colors duration-200 font-medium flex items-center justify-center gap-2"
+            className="flex-1 bg-green-50 hover:bg-green-100 text-green-700 py-2 px-3 rounded-lg transition-colors duration-200 font-medium flex items-center justify-center gap-1 text-sm"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3 h-3" />
             Add to Cook List
+          </button>
+          <button 
+            onClick={handleLikeRecipe}
+            className={`flex-1 py-2 px-3 rounded-lg transition-colors duration-200 font-medium flex items-center justify-center gap-1 text-sm ${
+              isLiked 
+                ? 'bg-red-50 hover:bg-red-100 text-red-700' 
+                : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+            }`}
+          >
+            <Heart className={`w-3 h-3 ${isLiked ? 'fill-current' : ''}`} />
+            Like Recipe
           </button>
         </CardFooter>
       </Card>

@@ -150,15 +150,16 @@ def get_or_create_ingredient(cursor, conn, ing_name: str):
 
 def main():
     config = Config()
-    db_conf = dict(
-        host=config.MYSQL_HOST,
-        user=config.MYSQL_USER,
-        password=config.MYSQL_PASSWORD,
-        database=config.MYSQL_DB,
-        charset='utf8mb4',
-        use_unicode=True
-    )
-    conn = mysql.connector.connect(**db_conf)
+    DB_CONFIG = {
+        'host': config.MYSQL_HOST,
+        'user': config.MYSQL_USER,
+        'password': config.MYSQL_PASSWORD,
+        'database': config.MYSQL_DB,
+        'charset': 'utf8mb4',
+        'use_unicode': True,
+        "port": config.MYSQL_PORT
+    }
+    conn = mysql.connector.connect(**DB_CONFIG)
     cursor = conn.cursor(buffered=True)
 
     # 1) Users

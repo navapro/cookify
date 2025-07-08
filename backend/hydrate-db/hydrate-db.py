@@ -92,6 +92,8 @@ def main():
         return
 
     # 3. Iterate rows
+    test_user_res_count = 3
+
     for idx, row in df.iterrows():
         name = row.get('Title')
         instructions = row.get('Instructions')
@@ -112,10 +114,19 @@ def main():
                   (User_ID, Name, Duration, Difficulty, Cuisine, Instructions, Image_URL)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
-            cursor.execute(
-                insert_recipe_sql,
-                (ADMIN_USER_ID, name, duration, difficulty, cuisine, instructions, image_url)
-            )
+            if test_user_res_count > 0:
+                cursor.execute(
+                    insert_recipe_sql,
+                    (ADMIN_USER_ID + 1, name, duration, difficulty, cuisine, instructions, image_url)
+                )
+                test_user_res_count -= 1
+            else:
+                cursor.execute(
+                    insert_recipe_sql,
+                    (ADMIN_USER_ID, name, duration, difficulty, cuisine, instructions, image_url)
+                )
+
+                
             recipe_id = cursor.lastrowid
 
             # 3b. Parse Cleaned_Ingredients

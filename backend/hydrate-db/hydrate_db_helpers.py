@@ -117,16 +117,20 @@ def create_dummy_cooklists(cursor, conn, user_ids, lists_per_user=2):
 def create_dummy_cooklist_recipes(cursor, conn, cooklist_ids, recipe_ids, max_recipes_per_list=5):
     """
     For each cooklist, add 1–`max_recipes_per_list` random recipes.
-    Returns nothing (or you can gather inserted pairs if you like).
+    Each entry gets a random Added_At datetime within the last 90 days.
     """
     for cl in cooklist_ids:
         n = random.randint(1, min(max_recipes_per_list, len(recipe_ids)))
         picks = random.sample(recipe_ids, n)
         for r in picks:
+            # Generate a random datetime within the last 90 days
+            days_ago = random.randint(0, 90)
+            seconds_ago = random.randint(0, 86400)
+            added_at = datetime.datetime.now() - datetime.timedelta(days=days_ago, seconds=seconds_ago)
             try:
                 cursor.execute(
-                    "INSERT INTO CookList_Recipes (CookList_ID, Recipe_ID) VALUES (%s, %s)",
-                    (cl, r)
+                    "INSERT INTO CookList_Recipes (CookList_ID, Recipe_ID, Added_At) VALUES (%s, %s, %s)",
+                    (cl, r, added_at)
                 )
             except IntegrityError:
                 pass

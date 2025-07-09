@@ -333,6 +333,7 @@ const fetchCookListRecipes = async (cookListId: number, sort: string) => {
                     image: recipe.image || "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=500&h=300",
                     ingredients: recipe.ingredients || [],
                     instructions: recipe.instructions || [],
+                    added_at: recipe.added_at,
                   }} />
                 ))}
               </div>

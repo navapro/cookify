@@ -131,6 +131,8 @@ def get_cooklist_recipes_sorted(cooklist_id):
         order_clause = "clr.Added_At ASC"
     elif sort == 'name_asc':
         order_clause = "r.Name ASC"
+    elif sort == 'name_desc':
+        order_clause = "r.Name DESC"
     else:
         order_clause = "clr.Added_At DESC"
 

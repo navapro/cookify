@@ -77,14 +77,17 @@ ORDER BY r.Name ASC;
 
 -- feature 4: updating a recipe
 -- List all columns from Recipes
-SELECT * FROM Recipes;
+SELECT Recipe_ID, Name, Duration, Cuisine, User_ID
+FROM Recipes
+ORDER BY Name DESC
+LIMIT 5;
 
 -- Insert new recipe:
 INSERT INTO Recipes
     (Name, Duration, Difficulty, Cuisine, Instructions, Image_URL, User_ID)
 VALUES
     (
-      'Blueberry Pancakes',
+      'zzz Blueberry Pancakes',
       25,
       'Easy',
       'American',
@@ -94,23 +97,29 @@ VALUES
     );
 
 -- List all columns from Recipes
-SELECT * FROM Recipes;
+SELECT Recipe_ID, Name, Duration, Cuisine, User_ID
+FROM Recipes
+ORDER BY Name DESC
+LIMIT 5;
 
 -- Update recipe:
 UPDATE Recipes
 SET
-    Name         = 'Blueberry Banana Pancakes',
+    Name         = 'zzz Blueberry Banana Pancakes',
     Duration     = 30,
     Difficulty   = 'Easy',
     Cuisine      = 'American',
     Instructions = 'Combine flour, milk, eggs, mashed banana, and blueberries; cook on griddle until golden; serve with honey or syrup.',
     Image_URL    = 'https://example.com/images/blueberry_banana_pancakes.jpg'
 WHERE
-    Recipe_ID    = 2
+    Recipe_ID    = 3988
   AND User_ID      = 1;
 
 -- List all columns from Recipes
-SELECT * FROM Recipes;
+SELECT Recipe_ID, Name, Duration, Cuisine, User_ID
+FROM Recipes
+ORDER BY Name DESC
+LIMIT 5;
 
 -- feature 5: trigger to update liked cooklists
 -- trigger for automatically generating 'Liked Recipes' cooklist

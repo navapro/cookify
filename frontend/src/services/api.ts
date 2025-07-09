@@ -1,4 +1,36 @@
+import { handleTokenExpiration, isTokenExpiredError } from "@/utils/auth";
+
 const API_BASE_URL = "http://localhost:5001/api";
+
+// Helper function to handle API responses and detect token expiration
+const handleApiResponse = async (response: Response) => {
+  if (!response.ok) {
+    let errorData;
+    try {
+      errorData = await response.json();
+    } catch {
+      errorData = { error: "Unknown error" };
+    }
+
+    const errorMessage = errorData.error || errorData.msg || "Request failed";
+    
+    // Check if it's a token expiration error
+    if (response.status === 401 && (
+      errorMessage.includes('Token has expired') ||
+      errorMessage.includes('token expired') ||
+      errorMessage.includes('jwt expired') ||
+      errorMessage.includes('Signature verification failed')
+    )) {
+      // Automatically logout and redirect
+      handleTokenExpiration();
+      throw new Error("Session expired. Please log in again.");
+    }
+    
+    throw new Error(errorMessage);
+  }
+  
+  return response.json();
+};
 
 export interface Recipe {
   id: number;
@@ -172,18 +204,7 @@ export const createRecipe = async (recipeData) => {
     body: JSON.stringify(recipeData),
   });
 
-  if (!response.ok) {
-    let errorMsg = "Failed to create recipe";
-    try {
-      const errorJson = await response.json();
-      errorMsg = errorJson.error || errorMsg;
-    } catch {
-      // ignore JSON parse errors
-    }
-    throw new Error(errorMsg);
-  }
-
-  return response.json();
+  return handleApiResponse(response);
 };
 
 export const getRecipe = async (id: number) => {
@@ -257,12 +278,7 @@ export const createCookList = async (name: string, description: string = "", use
     body: JSON.stringify({ name, description, user_id: userId }),
   });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || "Failed to create cooklist");
-  }
-
-  return response.json();
+  return handleApiResponse(response);
 };
 
 export const addRecipeToCookList = async (cooklistId: number, recipeId: number) => {
@@ -280,12 +296,7 @@ export const addRecipeToCookList = async (cooklistId: number, recipeId: number) 
     body: JSON.stringify({ recipe_id: recipeId }),
   });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || "Failed to add recipe to cooklist");
-  }
-
-  return response.json();
+  return handleApiResponse(response);
 };
 
 // Shopping Lists
@@ -461,4 +472,55 @@ export const deleteShoppingList = async (shoppingListId: number) => {
   }
 
   return response.json();
+};
+
+export const likeRecipe = async (recipeId: number) => {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/recipes/${recipeId}/like`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  return handleApiResponse(response);
+};
+
+export const unlikeRecipe = async (recipeId: number) => {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/recipes/${recipeId}/unlike`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  return handleApiResponse(response);
+};
+
+export const checkRecipeLiked = async (recipeId: number) => {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/recipes/${recipeId}/liked`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  return handleApiResponse(response);
 };

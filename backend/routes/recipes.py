@@ -187,3 +187,95 @@ def get_user_recipes(user_id):
         return jsonify(recipes), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@recipes_bp.route('/<int:recipe_id>/like', methods=['POST'])
+@jwt_required()
+def like_recipe(recipe_id):
+    try:
+        current_user_id = int(get_jwt_identity())
+        
+        # Check if recipe exists
+        recipe_check = db.session.execute(
+            text("SELECT Recipe_ID FROM Recipes WHERE Recipe_ID = :recipe_id"),
+            {"recipe_id": recipe_id}
+        ).fetchone()
+        
+        if not recipe_check:
+            return jsonify({"error": "Recipe not found"}), 404
+        
+        # Check if user has already liked this recipe
+        existing_like = db.session.execute(
+            text("SELECT * FROM Recipe_Likes WHERE User_ID = :user_id AND Recipe_ID = :recipe_id"),
+            {"user_id": current_user_id, "recipe_id": recipe_id}
+        ).fetchone()
+        
+        if existing_like:
+            return jsonify({"error": "Recipe already liked"}), 400
+        
+        # Insert the like (triggers will handle the rest)
+        db.session.execute(
+            text("INSERT INTO Recipe_Likes (User_ID, Recipe_ID) VALUES (:user_id, :recipe_id)"),
+            {"user_id": current_user_id, "recipe_id": recipe_id}
+        )
+        db.session.commit()
+        
+        return jsonify({"message": "Recipe liked successfully"}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@recipes_bp.route('/<int:recipe_id>/unlike', methods=['DELETE'])
+@jwt_required()
+def unlike_recipe(recipe_id):
+    try:
+        current_user_id = int(get_jwt_identity())
+        
+        # Check if user has liked this recipe
+        existing_like = db.session.execute(
+            text("SELECT * FROM Recipe_Likes WHERE User_ID = :user_id AND Recipe_ID = :recipe_id"),
+            {"user_id": current_user_id, "recipe_id": recipe_id}
+        ).fetchone()
+        
+        if not existing_like:
+            return jsonify({"error": "Recipe not liked"}), 400
+        
+        # Remove the like
+        db.session.execute(
+            text("DELETE FROM Recipe_Likes WHERE User_ID = :user_id AND Recipe_ID = :recipe_id"),
+            {"user_id": current_user_id, "recipe_id": recipe_id}
+        )
+        
+        # Also remove from Liked Recipes cooklist
+        db.session.execute(
+            text("""
+                DELETE FROM CookList_Recipes 
+                WHERE CookList_ID = (
+                    SELECT CookList_ID FROM CookLists 
+                    WHERE User_ID = :user_id AND Name = 'Liked Recipes'
+                ) AND Recipe_ID = :recipe_id
+            """),
+            {"user_id": current_user_id, "recipe_id": recipe_id}
+        )
+        
+        db.session.commit()
+        
+        return jsonify({"message": "Recipe unliked successfully"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@recipes_bp.route('/<int:recipe_id>/liked', methods=['GET'])
+@jwt_required()
+def check_recipe_liked(recipe_id):
+    try:
+        current_user_id = int(get_jwt_identity())
+        
+        # Check if user has liked this recipe
+        existing_like = db.session.execute(
+            text("SELECT * FROM Recipe_Likes WHERE User_ID = :user_id AND Recipe_ID = :recipe_id"),
+            {"user_id": current_user_id, "recipe_id": recipe_id}
+        ).fetchone()
+        
+        return jsonify({"isLiked": existing_like is not None}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

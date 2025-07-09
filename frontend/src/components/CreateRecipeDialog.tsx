@@ -48,7 +48,7 @@ const durations = [
   { label: "All Day (120+ min)", value: 120 },
 ];
 
-const difficulties = ["Easy", "Intermediate", "Hard"];
+const difficulties = ["Easy", "Medium", "Hard"];
 
 export const CreateRecipeDialog = ({
   open,

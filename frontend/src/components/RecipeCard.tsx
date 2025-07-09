@@ -1,10 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Clock, ChefHat, Plus, Heart } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { RecipeDialog } from "./RecipeDialog";
 import { CookListDialog } from "./CookListDialog";
+import { useToast } from "@/hooks/use-toast";
+import { likeRecipe, unlikeRecipe, checkRecipeLiked } from "@/services/api";
 
 interface Recipe {
   id: number;
@@ -25,6 +27,30 @@ export const RecipeCard = ({ recipe }: RecipeCardProps) => {
   const [recipeDialogOpen, setRecipeDialogOpen] = useState(false);
   const [cookListDialogOpen, setCookListDialogOpen] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  // Check if recipe is liked when component mounts
+  useEffect(() => {
+    const checkLikedStatus = async () => {
+      try {
+        // Only check liked status if user is logged in
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          setIsLiked(false);
+          return;
+        }
+        
+        const response = await checkRecipeLiked(recipe.id);
+        setIsLiked(response.isLiked);
+      } catch (error) {
+        // If user is not logged in or other error, default to false
+        setIsLiked(false);
+      }
+    };
+
+    checkLikedStatus();
+  }, [recipe.id]);
 
   const handleViewRecipe = () => {
     setRecipeDialogOpen(true);
@@ -34,10 +60,33 @@ export const RecipeCard = ({ recipe }: RecipeCardProps) => {
     setCookListDialogOpen(true);
   };
 
-  const handleLikeRecipe = () => {
-    setIsLiked(!isLiked);
-    // TODO: Add API call to like/unlike recipe
-    console.log(`Recipe ${recipe.title} ${isLiked ? 'unliked' : 'liked'}`);
+  const handleLikeRecipe = async () => {
+    setIsLoading(true);
+    try {
+      if (isLiked) {
+        await unlikeRecipe(recipe.id);
+        setIsLiked(false);
+        toast({
+          title: "Recipe Unliked! 💔",
+          description: `"${recipe.title}" has been removed from your liked recipes`,
+        });
+      } else {
+        await likeRecipe(recipe.id);
+        setIsLiked(true);
+        toast({
+          title: "Recipe Liked! ❤️",
+          description: `"${recipe.title}" has been added to your liked recipes`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update recipe like status",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -110,13 +159,18 @@ export const RecipeCard = ({ recipe }: RecipeCardProps) => {
           </button>
           <button 
             onClick={handleLikeRecipe}
+            disabled={isLoading}
             className={`flex-1 py-2 px-3 rounded-lg transition-colors duration-200 font-medium flex items-center justify-center gap-1 text-sm ${
               isLiked 
                 ? 'bg-red-50 hover:bg-red-100 text-red-700' 
                 : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
-            }`}
+            } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            <Heart className={`w-3 h-3 ${isLiked ? 'fill-current' : ''}`} />
+            {isLoading ? (
+              <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Heart className={`w-3 h-3 ${isLiked ? 'fill-current' : ''}`} />
+            )}
             Like Recipe
           </button>
         </CardFooter>

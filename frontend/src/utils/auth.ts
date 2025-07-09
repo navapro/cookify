@@ -31,4 +31,22 @@ export const logout = (): void => {
 export const setAuthData = (accessToken: string, user: User): void => {
   localStorage.setItem("access_token", accessToken);
   localStorage.setItem("user", JSON.stringify(user));
+};
+
+export const handleTokenExpiration = (): void => {
+  // Clear all auth data
+  logout();
+  
+  // Redirect to login page
+  window.location.href = '/login';
+};
+
+export const isTokenExpiredError = (error: any): boolean => {
+  // Check if the error indicates an expired token
+  return (
+    error?.message?.includes('Token has expired') ||
+    error?.message?.includes('token expired') ||
+    error?.message?.includes('jwt expired') ||
+    error?.message?.includes('Signature verification failed')
+  );
 }; 

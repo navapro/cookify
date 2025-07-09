@@ -140,7 +140,7 @@ LIMIT 5;
 -- BEFORE INSERT ON Cooklists
 -- FOR EACH ROW
 -- 	BEGIN
--- 		IF ((SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') > 0) THEN
+-- 		IF (NEW.Name = 'Liked Recipes' AND (SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') > 0) THEN
 -- 			SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Only one Liked Recipes cooklist can exist!';
 -- 		END IF;
 -- 	END; //
@@ -179,7 +179,10 @@ INSERT INTO Recipe_Likes (User_ID, Recipe_ID) VALUES
 (6, 102);
 
 -- viewing liked recipes
-SELECT * FROM Cooklist_Recipes WHERE Cooklist_ID = (SELECT Cooklist_ID FROM Cooklists WHERE User_ID = '6' AND Name = 'Liked Recipes');
+SELECT * FROM Recipe_Likes WHERE User_ID = 2;
 
--- attempting to create a new Liked Recipes Cooklist for Wayne (which gives an error)
+-- viewing recipes in Liked Recipes cooklist
+SELECT * FROM Recipes r WHERE EXISTS (SELECT Recipe_ID FROM Cooklist_Recipes WHERE Cooklist_ID = (SELECT Cooklist_ID FROM Cooklists WHERE User_ID = '2' AND Name = 'Liked Recipes') AND Recipe_ID = r.Recipe_ID);
+
+-- attempting to create a new Liked Recipes Cooklist for Wayne (which intentionally gives an error)
 -- INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (6, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);

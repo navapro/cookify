@@ -17,6 +17,7 @@ interface Recipe {
   ingredients: string[];
   instructions: string[];
   isMyRecipe?: boolean;
+  added_at?: string; 
 }
 
 interface RecipeCardProps {
@@ -140,6 +141,13 @@ export const RecipeCard = ({ recipe }: RecipeCardProps) => {
                 {recipe.instructions[0]}
               </p>
             </div>
+
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 mb-1">Added at:</h4>
+              <p className="text-sm text-gray-600 line-clamp-2">
+                {new Date(recipe.added_at).toLocaleString()}
+              </p>
+            </div> 
           </div>
         </CardContent>
         

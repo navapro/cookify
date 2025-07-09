@@ -6,6 +6,8 @@ import { RecipeCard } from "@/components/RecipeCard";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { getUser } from "@/utils/auth";
 import { getUserDetails, getUserStats, getUserRecipes, getUserCookLists, getCookList, type User, type UserStats, type Recipe } from "@/services/api";
+import { useToast } from "@/hooks/use-toast";
+import { getCookListRecipes } from "@/services/api";
 
 
 // Helper function to convert cookify level to title
@@ -29,6 +31,9 @@ const Profile = () => {
   const [userRecipes, setUserRecipes] = useState<Recipe[]>([]);
   const [userCookLists, setUserCookLists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cookListRecipes, setCookListRecipes] = useState<any[]>([]);
+  const [cookListSort, setCookListSort] = useState<'date_desc' | 'date_asc' | 'name_asc'>('date_desc');
+  const { toast } = useToast();
   
   // Get the current user's information
   const currentUser = getUser();
@@ -81,16 +86,43 @@ const Profile = () => {
     }
   };
 
+  // Fetch cooklist details and recipes (with sorting)
   const handleCookListClick = async (cookList: any) => {
     try {
       // Fetch detailed cooklist data with recipes
       const detailedCookList = await getCookList(cookList.id);
       setSelectedCookList(detailedCookList);
+      // Fetch sorted recipes for this cooklist
+      fetchCookListRecipes(cookList.id, cookListSort);
     } catch (error) {
       console.error('Error fetching cooklist details:', error);
       setSelectedCookList(cookList);
+      setCookListRecipes([]);
     }
   };
+
+  // Fetch recipes for a cooklist with sorting
+const fetchCookListRecipes = async (cookListId: number, sort: string) => {
+  try {
+    const data = await getCookListRecipes(cookListId, sort);
+    setCookListRecipes(data);
+  } catch (err) {
+    setCookListRecipes([]);
+    toast({
+      title: "Error",
+      description: "Failed to fetch cooklist recipes.",
+      variant: "destructive",
+    });
+  }
+};
+
+  // When sort changes, refetch recipes for the selected cooklist
+  useEffect(() => {
+    if (selectedCookList) {
+      fetchCookListRecipes(selectedCookList.id, cookListSort);
+    }
+    // eslint-disable-next-line
+  }, [cookListSort, selectedCookList?.id]);
 
   // Chef level styling based on level title
   const getChefLevelStyle = (level: string) => {
@@ -263,12 +295,40 @@ const Profile = () => {
                     <p className="text-blue-600">{selectedCookList.recipeCount} recipes in this collection</p>
                   </div>
                 </div>
+                {/* Sorting Buttons */}
+                <div className="flex gap-2 mt-2">
+                  <Button
+                    variant={cookListSort === "date_desc" ? "default" : "outline"}
+                    onClick={() => setCookListSort("date_desc")}
+                  >
+                    Newest First
+                  </Button>
+                  <Button
+                    variant={cookListSort === "date_asc" ? "default" : "outline"}
+                    onClick={() => setCookListSort("date_asc")}
+                  >
+                    Oldest First
+                  </Button>
+                  <Button
+                    variant={cookListSort === "name_asc" ? "default" : "outline"}
+                    onClick={() => setCookListSort("name_asc")}
+                  >
+                    A-Z
+                  </Button>
+                </div>
               </div>
 
               {/* Recipes in Cook List */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {selectedCookList.recipes.map(recipe => (
-                  <RecipeCard key={recipe.id} recipe={recipe} />
+                {cookListRecipes.map(recipe => (
+                  <RecipeCard key={recipe.id} recipe={{
+                    ...recipe,
+                    title: recipe.name, // adapt backend field to frontend
+                    image: recipe.image || "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=500&h=300",
+                    ingredients: recipe.ingredients || [],
+                    instructions: recipe.instructions || [],
+                    added_at: recipe.added_at,
+                  }} />
                 ))}
               </div>
             </>

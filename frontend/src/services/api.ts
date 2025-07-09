@@ -299,6 +299,16 @@ export const addRecipeToCookList = async (cooklistId: number, recipeId: number) 
   return handleApiResponse(response);
 };
 
+// get sorted cooklists - BASIC FEATURE 3
+export const getCookListRecipes = async (cookListId: number, sort: string = "date_desc") => {
+  const response = await fetch(`${API_BASE_URL}/cooklists/${cookListId}/recipes?sort=${sort}`);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to fetch cooklist recipes");
+  }
+  return response.json();
+};
+
 // Shopping Lists
 export const getShoppingLists = async (): Promise<ShoppingList[]> => {
   const token = localStorage.getItem("access_token");

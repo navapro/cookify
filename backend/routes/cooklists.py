@@ -119,7 +119,6 @@ def get_user_cooklists(user_id):
         return jsonify(cooklists)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 @cooklists_bp.route('/', methods=['POST'])
 def create_cooklist():
     try:
@@ -188,4 +187,45 @@ def add_recipe_to_cooklist(cooklist_id):
         return jsonify({"message": "Recipe added to cooklist successfully"}), 201
     except Exception as e:
         db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+    
+@cooklists_bp.route('/<int:cooklist_id>/recipes', methods=['GET'])
+def get_cooklist_recipes_sorted(cooklist_id):
+    """
+    Get recipes in a cooklist, ordered by date added (asc/desc) or by name.
+    Query param: sort = 'date_asc' | 'date_desc' | 'name_asc'
+    """
+    sort = request.args.get('sort', 'date_desc')
+    if sort == 'date_asc':
+        order_clause = "clr.Added_At ASC"
+    elif sort == 'name_asc':
+        order_clause = "r.Name ASC"
+    elif sort == 'name_desc':
+        order_clause = "r.Name DESC"
+    else:
+        order_clause = "clr.Added_At DESC"
+
+    try:
+        recipes_result = db.session.execute(
+            text(f"""
+                SELECT r.Recipe_ID, r.Name, r.Cuisine, r.Difficulty, r.Instructions, clr.Added_At AS Added_To_List_At
+                FROM CookList_Recipes clr
+                JOIN Recipes r ON clr.Recipe_ID = r.Recipe_ID
+                WHERE clr.CookList_ID = :id
+                ORDER BY {order_clause}
+            """),
+            {"id": cooklist_id}
+        )
+        recipes = []
+        for row in recipes_result:
+            recipes.append({
+                "id": row[0],
+                "name": row[1],
+                "cuisine": row[2],
+                "difficulty": row[3],
+                "instructions": row[4].split('\n') if row[4] else [],
+                "added_at": row[5].isoformat() if row[5] else None,
+            })
+        return jsonify(recipes)
+    except Exception as e:
         return jsonify({"error": str(e)}), 500

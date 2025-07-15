@@ -155,6 +155,46 @@ def reset_and_create_tables():
         # speeds up ordering by recipe name/name lookups in general
         cursor.execute("CREATE INDEX idx_recipes_name ON Recipes (Name);")
 
+        # for basic feature 5
+        # dropping all triggers
+        cursor.execute("DROP TRIGGER IF EXISTS CreateLikedRecipes;")
+        cursor.execute("DROP TRIGGER IF EXISTS UniqueLikedCooklist;")
+        cursor.execute("DROP TRIGGER IF EXISTS AddToLikedRecipes;")
+
+        # trigger for automatically generating 'Liked Recipes' cooklist
+        cursor.execute("""delimiter //
+                        CREATE TRIGGER CreateLikedRecipes
+                        AFTER INSERT ON Users
+                        FOR EACH ROW
+                            BEGIN
+                            IF ((SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') = 0) THEN
+                                INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (NEW.User_ID, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
+                            END IF;
+                            END; //""")
+        
+        # trigger for rejecting when a user attempts to create a 'Liked Recipes' cooklist on their own
+        cursor.execute("""delimiter //
+                        CREATE TRIGGER UniqueLikedCooklist
+                        BEFORE INSERT ON Cooklists
+                        FOR EACH ROW
+                            BEGIN
+                                IF (NEW.Name = 'Liked Recipes' AND (SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') > 0) THEN
+                                    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Only one Liked Recipes cooklist can exist!';
+                                END IF;
+                            END; //""")
+
+        # creating trigger for automatically adding liked recipes to Liked Recipes
+        cursor.execute("""delimiter //
+                        CREATE TRIGGER AddToLikedRecipes
+                        AFTER INSERT ON Recipe_Likes
+                        FOR EACH ROW
+                            BEGIN
+                                IF ((SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') = 0) THEN
+                                    INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (NEW.User_ID, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
+                                END IF;
+                                INSERT INTO Cooklist_Recipes VALUES ((SELECT Cooklist_ID FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes'), NEW.Recipe_ID, NEW.Liked_At);
+                            END; //""")
+
         connection.commit()
         print("Database reset and tables recreated successfully!")
 

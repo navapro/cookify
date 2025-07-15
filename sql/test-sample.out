@@ -65,3 +65,9 @@ Recipe_ID	User_ID	Name	Duration	Difficulty	Cuisine	Instructions	Recipe_Link	Imag
 9	3	Fried Rice	15	Easy	Chinese	a (blank) fried this rice!?!?!?	NULL	very real link	1	2025-06-19 22:35:01	2025-06-19 22:35:01
 10	4	Croissants	300	Hard	French	hon hon hon	NULL	very real link	6	2025-06-19 22:35:01	2025-06-19 22:35:01
 11	1	Blueberry Pancakes	25	Easy	American	Mix flour, milk, eggs, and blueberries; cook on griddle until golden brown; serve with syrup.	NULL	https://example.com/images/blueberry_pancakes.jpg	1	2025-06-19 22:35:01	2025-06-19 22:35:01
+CookList_ID	User_ID	Name	Description	Is_Public	Created_At	Updated_At
+6	6	Liked Recipes	All your liked recipes in one place!	1	2025-07-08 23:43:45	2025-07-08 23:43:45
+Recipe_ID	User_ID	Name	Duration	Difficulty	Cuisine	Instructions	Recipe_Link	Image_URL	Servings	Created_At	Updated_At
+102	1	Tamagoyaki	15	Medium	Japanese	also cook good. please.	NULL	slightly real link	3	2025-07-08 23:43:45	2025-07-08 23:43:45
+104	3	Fried Rice	15	Easy	Chinese	a (blank) fried this rice!?!?!?	NULL	very real link	1	2025-07-08 23:43:45	2025-07-08 23:43:45
+105	4	Croissants	300	Hard	French	hon hon hon	NULL	very real link	6	2025-07-08 23:43:45	2025-07-08 23:43:45

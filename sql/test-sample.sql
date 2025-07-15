@@ -6,7 +6,7 @@ SELECT User_ID FROM Users WHERE Email = 'john.doe@email.com';
 
 -- 2. Insert new user profile
 INSERT INTO Users (Name, Email, Password, Cookify_Level) 
-VALUES ('John Doe', 'john.doe@email.com', '$2b$12$hashed_password_example', '🐀 Street Rat');
+VALUES ('John Doe', 'john.doe@email.com', '$2b$12$hashed_password_example', '1');
 
 -- 3. Verify user was created successfully
 SELECT User_ID, Name, Email, Cookify_Level, Created_At 
@@ -15,11 +15,11 @@ WHERE Email = 'john.doe@email.com';
 
 -- 4. Insert another valid user (formerly duplicate test)
 INSERT INTO Users (Name, Email, Password, Cookify_Level) 
-VALUES ('Jane Smith', 'jane.doe@email.com', '$2b$12$another_hashed_password', '🐀 Street Rat');
+VALUES ('Jane Smith', 'jane.doe@email.com', '$2b$12$another_hashed_password', '1');
 
 -- 5. Create another valid user
 INSERT INTO Users (Name, Email, Password, Cookify_Level) 
-VALUES ('Sarah Chef', 'sarah.chef@email.com', '$2b$12$sarah_hashed_password', '🐀 Street Rat');
+VALUES ('Sarah Chef', 'sarah.chef@email.com', '$2b$12$sarah_hashed_password', '1');
 
 -- 6. View all created users
 SELECT User_ID, Name, Email, Cookify_Level, Created_At FROM Users ORDER BY Created_At DESC; 
@@ -139,12 +139,12 @@ CREATE TRIGGER UniqueLikedCooklist
 BEFORE INSERT ON Cooklists
 FOR EACH ROW
 	BEGIN
-		IF ((SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') > 0) THEN
+		IF (NEW.Name = 'Liked Recipes' AND (SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') > 0) THEN
 			SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Only one Liked Recipes cooklist can exist!';
 		END IF;
 	END; //
 
--- creating trigger, assumes all users have a liked recipes cooklist by default
+-- creating trigger for automatically adding liked recipes to Liked Recipes
 delimiter //
 CREATE TRIGGER AddToLikedRecipes
 AFTER INSERT ON Recipe_Likes
@@ -178,7 +178,10 @@ INSERT INTO Recipe_Likes (User_ID, Recipe_ID) VALUES
 (6, 102);
 
 -- viewing liked recipes
-SELECT * FROM Cooklist_Recipes WHERE Cooklist_ID = (SELECT Cooklist_ID FROM Cooklists WHERE User_ID = '6' AND Name = 'Liked Recipes');
+SELECT * FROM Recipe_Likes WHERE User_ID = 6;
 
--- attempting to create a new Liked Recipes Cooklist for Wayne (which gives an error)
+-- viewing recipes in Liked Recipes cooklist
+SELECT * FROM Recipes r WHERE EXISTS (SELECT Recipe_ID FROM Cooklist_Recipes WHERE Cooklist_ID = (SELECT Cooklist_ID FROM Cooklists WHERE User_ID = '6' AND Name = 'Liked Recipes') AND Recipe_ID = r.Recipe_ID);
+
+-- attempting to create a new Liked Recipes Cooklist for Wayne (which intentionally gives an error)
 -- INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (6, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);

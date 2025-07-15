@@ -174,6 +174,16 @@ python hydrate-db.py
 - To start fresh at any time, rerun `reset_and_create_tables.py`, then repopulate with the other scripts.
 - Ensure your MySQL credentials in `config.py` are correct before running the scripts.
 
+---
+
+### How to test test-production.sql
+
+1. Hydrate DB with produciton data by following the instructions above
+2. Run test-production.sql script (from root directory) and validate it matches (note since some values in the production database is generated randomly there may be differences in test-production.out): 
+```bash
+mysql -u root -p cookify < sql/test-production.sql
+```
+
 ## Technologies Used
 
 ### Frontend

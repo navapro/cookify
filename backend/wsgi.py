@@ -25,11 +25,13 @@ def create_app():
     from routes.recipes import recipes_bp
     from routes.cooklists import cooklists_bp
     from routes.shopping_lists import shopping_lists_bp
+    from routes.user_ingredients import user_ingredients_bp
     
     app.register_blueprint(users_bp, url_prefix='/api/users')
     app.register_blueprint(recipes_bp, url_prefix='/api/recipes')
     app.register_blueprint(cooklists_bp, url_prefix='/api/cooklists')
     app.register_blueprint(shopping_lists_bp, url_prefix='/api/shopping-lists')
+    app.register_blueprint(user_ingredients_bp, url_prefix='/api/users')
     
     return app
 

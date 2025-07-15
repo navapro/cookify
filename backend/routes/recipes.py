@@ -212,11 +212,41 @@ def like_recipe(recipe_id):
         if existing_like:
             return jsonify({"error": "Recipe already liked"}), 400
         
-        # Insert the like (triggers will handle the rest)
+        # Insert the like
         db.session.execute(
             text("INSERT INTO Recipe_Likes (User_ID, Recipe_ID) VALUES (:user_id, :recipe_id)"),
             {"user_id": current_user_id, "recipe_id": recipe_id}
         )
+        
+        # Add to Liked Recipes cooklist (create if it doesn't exist)
+        liked_cooklist = db.session.execute(
+            text("SELECT CookList_ID FROM CookLists WHERE User_ID = :user_id AND Name = 'Liked Recipes'"),
+            {"user_id": current_user_id}
+        ).fetchone()
+        
+        if not liked_cooklist:
+            # Create the Liked Recipes cooklist
+            db.session.execute(
+                text("INSERT INTO CookLists (User_ID, Name, Description, Is_Public) VALUES (:user_id, 'Liked Recipes', 'Automatically created cooklist for liked recipes', 0)"),
+                {"user_id": current_user_id}
+            )
+            liked_cooklist = db.session.execute(
+                text("SELECT CookList_ID FROM CookLists WHERE User_ID = :user_id AND Name = 'Liked Recipes'"),
+                {"user_id": current_user_id}
+            ).fetchone()
+        
+        # Add recipe to Liked Recipes cooklist (if not already there)
+        existing_in_cooklist = db.session.execute(
+            text("SELECT * FROM CookList_Recipes WHERE CookList_ID = :cooklist_id AND Recipe_ID = :recipe_id"),
+            {"cooklist_id": liked_cooklist[0], "recipe_id": recipe_id}
+        ).fetchone()
+        
+        if not existing_in_cooklist:
+            db.session.execute(
+                text("INSERT INTO CookList_Recipes (CookList_ID, Recipe_ID) VALUES (:cooklist_id, :recipe_id)"),
+                {"cooklist_id": liked_cooklist[0], "recipe_id": recipe_id}
+            )
+        
         db.session.commit()
         
         return jsonify({"message": "Recipe liked successfully"}), 201

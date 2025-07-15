@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sidebar";
 import { CreateCooklistDialog } from "./CreateCooklistDialog";
 import { CreateRecipeDialog } from "./CreateRecipeDialog";
+import { SmartShoppingDialog } from "./SmartShoppingDialog";
 
 const sidebarItems = [
   {
@@ -25,9 +26,9 @@ const sidebarItems = [
     action: "create-cooklist",
   },
   {
-    title: "Shopping Lists",
+    title: "Smart Shopping",
     icon: ShoppingCart,
-    action: "shopping-lists",
+    action: "smart-shopping",
   },
   {
     title: "My Profile",
@@ -44,6 +45,7 @@ const sidebarItems = [
 export function AppSidebar() {
   const [createCooklistDialogOpen, setCreateCooklistDialogOpen] = useState(false);
   const [createRecipeDialogOpen, setCreateRecipeDialogOpen] = useState(false);
+  const [smartShoppingDialogOpen, setSmartShoppingDialogOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleAction = (action: string) => {
@@ -53,8 +55,8 @@ export function AppSidebar() {
       setCreateCooklistDialogOpen(true);
     } else if (action === "create-recipe") {
       setCreateRecipeDialogOpen(true);
-    } else if (action === "shopping-lists") {
-      navigate("/shopping-lists");
+    } else if (action === "smart-shopping") {
+      setSmartShoppingDialogOpen(true);
     } else if (action === "my-profile") {
       navigate("/profile");
     } else if (action === "logout") {
@@ -74,9 +76,9 @@ export function AppSidebar() {
                   <SidebarMenuItem key={item.action}>
                     <SidebarMenuButton 
                       onClick={() => handleAction(item.action)}
-                      className="w-full h-32 hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200 flex-col gap-4 p-6"
+                      className="w-full h-36 hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200 flex-col gap-4 p-6 group"
                     >
-                      <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center hover:bg-blue-200 transition-colors">
+                      <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-all duration-200 group-hover:scale-[1.15]">
                         <item.icon className="w-8 h-8 text-blue-600" />
                       </div>
                       <span className="font-medium text-center text-blue-800">{item.title}</span>
@@ -97,6 +99,11 @@ export function AppSidebar() {
       <CreateRecipeDialog 
         open={createRecipeDialogOpen} 
         onOpenChange={setCreateRecipeDialogOpen} 
+      />
+
+      <SmartShoppingDialog 
+        open={smartShoppingDialogOpen} 
+        onOpenChange={setSmartShoppingDialogOpen} 
       />
     </>
   );

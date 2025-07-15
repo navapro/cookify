@@ -218,13 +218,37 @@ def get_cooklist_recipes_sorted(cooklist_id):
         )
         recipes = []
         for row in recipes_result:
+            recipe_id = row[0]
+            
+            # Get detailed ingredients for this recipe
+            ingredients_result = db.session.execute(
+                text("""
+                    SELECT ri.Ingredient_ID, i.Name, ri.Quantity, ri.Unit, i.Category
+                    FROM Recipe_Ingredients ri
+                    JOIN Ingredients i ON ri.Ingredient_ID = i.Ingredient_ID
+                    WHERE ri.Recipe_ID = :recipe_id
+                """),
+                {"recipe_id": recipe_id}
+            )
+            
+            ingredients = []
+            for ing_row in ingredients_result:
+                ingredients.append({
+                    "ingredient_id": ing_row[0],
+                    "name": ing_row[1],
+                    "quantity": ing_row[2],
+                    "unit": ing_row[3],
+                    "category": ing_row[4]
+                })
+            
             recipes.append({
-                "id": row[0],
+                "id": recipe_id,
                 "name": row[1],
                 "cuisine": row[2],
                 "difficulty": row[3],
                 "instructions": row[4].split('\n') if row[4] else [],
                 "added_at": row[5].isoformat() if row[5] else None,
+                "ingredients": ingredients,
             })
         return jsonify(recipes)
     except Exception as e:

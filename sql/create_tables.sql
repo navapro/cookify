@@ -6,6 +6,7 @@ USE cookify;
 
 -- Drop tables if they exist (for clean slate)
 DROP TABLE IF EXISTS User_Activities;
+DROP TABLE IF EXISTS User_Ingredients;
 DROP TABLE IF EXISTS CookList_Likes;
 DROP TABLE IF EXISTS Recipe_Likes;
 DROP TABLE IF EXISTS CookList_Recipes;
@@ -111,7 +112,19 @@ CREATE TABLE CookList_Likes (
   FOREIGN KEY (CookList_ID) REFERENCES CookLists(CookList_ID) ON DELETE CASCADE
 );
 
--- 9. User Activity Table - Track actions for leveling system
+-- 9. User Ingredients Table - What ingredients users have in their pantry
+CREATE TABLE User_Ingredients (
+  User_ID INT NOT NULL,
+  Ingredient_ID INT NOT NULL,
+  Quantity VARCHAR(50) NOT NULL, -- e.g., "2 cups", "500 grams", "3 pieces"
+  Added_At DATETIME DEFAULT CURRENT_TIMESTAMP,
+  Updated_At DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (User_ID, Ingredient_ID),
+  FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE,
+  FOREIGN KEY (Ingredient_ID) REFERENCES Ingredients(Ingredient_ID) ON DELETE CASCADE
+);
+
+-- 10. User Activity Table - Track actions for leveling system
 CREATE TABLE User_Activities (
   Activity_ID INT AUTO_INCREMENT PRIMARY KEY,
   User_ID INT NOT NULL,
@@ -130,6 +143,8 @@ CREATE INDEX idx_ingredients_season ON Ingredients(Season);
 CREATE INDEX idx_users_points ON Users(Points);
 CREATE INDEX idx_recipe_likes_recipe ON Recipe_Likes(Recipe_ID);
 CREATE INDEX idx_cooklist_likes_cooklist ON CookList_Likes(CookList_ID);
+CREATE INDEX idx_user_ingredients_user ON User_Ingredients(User_ID);
+CREATE INDEX idx_user_ingredients_ingredient ON User_Ingredients(Ingredient_ID);
 
 -- Insert sample data for testing
 -- Sample users with different levels
@@ -272,6 +287,43 @@ INSERT INTO CookList_Likes (User_ID, CookList_ID) VALUES
 (1, 3), -- Alice likes Italian Classics
 (3, 5), -- Carol likes Master Chef Challenge
 (2, 4); -- Bob likes Learning to Cook
+
+-- Add sample user ingredients (what users have in their pantry)
+INSERT INTO User_Ingredients (User_ID, Ingredient_ID, Quantity) VALUES
+-- Alice's pantry (well-stocked cook)
+(1, 1, '2 lbs'),        -- Chicken Breast
+(1, 5, '6 large'),      -- Tomatoes
+(1, 6, '3 medium'),     -- Onion
+(1, 7, '1 bulb'),       -- Garlic
+(1, 11, '1 bunch'),     -- Basil
+(1, 16, '2 boxes'),     -- Pasta
+(1, 22, '500ml'),       -- Olive Oil
+
+-- Bob's basic pantry (beginner)
+(2, 4, '12 count'),     -- Eggs
+(2, 6, '2 medium'),     -- Onion
+(2, 14, '1 container'), -- Salt
+(2, 17, '2 lbs'),       -- Rice
+
+-- Carol's advanced pantry (expert cook)
+(3, 1, '3 lbs'),        -- Chicken Breast
+(3, 2, '2 lbs'),        -- Ground Beef
+(3, 3, '1 lb'),         -- Salmon Fillet
+(3, 19, '200g'),        -- Parmesan Cheese
+(3, 21, '2 sticks'),    -- Butter
+(3, 7, '2 bulbs'),      -- Garlic
+
+-- Dave's minimal pantry (just starting)
+(4, 16, '1 box'),       -- Pasta
+(4, 14, '1 container'), -- Salt
+(4, 13, '1 container'), -- Black Pepper
+
+-- Emma's gourmet pantry (master chef)
+(5, 2, '5 lbs'),        -- Ground Beef
+(5, 19, '500g'),        -- Parmesan Cheese
+(5, 11, '2 bunches'),   -- Basil
+(5, 15, '1 lb'),        -- Paprika
+(5, 22, '1 liter');     -- Olive Oil
 
 -- Add some activity tracking for the leveling system
 INSERT INTO User_Activities (User_ID, Activity_Type, Points_Earned) VALUES

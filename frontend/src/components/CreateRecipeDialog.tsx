@@ -142,10 +142,8 @@ export const CreateRecipeDialog = ({
       if (onRecipeCreated) {
         onRecipeCreated();
       } else {
-        // If no callback provided and we're on profile page, refresh the page
-        if (window.location.pathname === '/profile') {
-          window.location.reload();
-        }
+        // If no callback provided, refresh the page to show new recipe
+        window.location.reload();
       }
     } catch (err: any) {
       toast({

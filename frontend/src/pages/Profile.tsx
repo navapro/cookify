@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, ChefHat, Clock, Globe, Award } from "lucide-react";
+import { ArrowLeft, ChefHat, Award, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { RecipeCard } from "@/components/RecipeCard";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { getUser } from "@/utils/auth";
-import { getUserDetails, getUserStats, getUserRecipes, getUserCookLists, getCookList, type User, type UserStats, type Recipe } from "@/services/api";
+import { getUserDetails, getUserStats, getUserRecipes, getUserCookLists, getCookList, getUserIngredients, type User, type UserStats, type Recipe, type UserIngredient } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { getCookListRecipes } from "@/services/api";
+import { useLikedRecipes } from "@/contexts/LikedRecipesContext";
 
 
 // Helper function to convert cookify level to title
@@ -30,10 +31,12 @@ const Profile = () => {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [userRecipes, setUserRecipes] = useState<Recipe[]>([]);
   const [userCookLists, setUserCookLists] = useState<any[]>([]);
+  const [userIngredients, setUserIngredients] = useState<UserIngredient[]>([]);
   const [loading, setLoading] = useState(true);
   const [cookListRecipes, setCookListRecipes] = useState<any[]>([]);
   const [cookListSort, setCookListSort] = useState<'date_desc' | 'date_asc' | 'name_asc'>('date_desc');
   const { toast } = useToast();
+  const { likedRecipesVersion } = useLikedRecipes();
   
   // Get the current user's information
   const currentUser = getUser();
@@ -43,12 +46,13 @@ const Profile = () => {
     const fetchUserData = async () => {
       if (currentUser?.id) {
         try {
-          // Fetch user details, stats, recipes, and cooklists
-          const [details, stats, recipes, cookLists] = await Promise.all([
+          // Fetch user details, stats, recipes, cooklists, and ingredients
+          const [details, stats, recipes, cookLists, ingredients] = await Promise.all([
             getUserDetails(currentUser.id),
             getUserStats(currentUser.id),
             getUserRecipes(currentUser.id),
-            getUserCookLists(currentUser.id)
+            getUserCookLists(currentUser.id),
+            getUserIngredients(currentUser.id)
           ]);
           
           setUserDetails(details);
@@ -58,6 +62,7 @@ const Profile = () => {
           });
           setUserRecipes(recipes);
           setUserCookLists(cookLists);
+          setUserIngredients(ingredients);
         } catch (error) {
           console.error("Failed to fetch user data:", error);
           // Set default values if API fails
@@ -77,6 +82,27 @@ const Profile = () => {
 
     fetchUserData();
   }, [currentUser?.id]);
+
+  // Refresh cooklists when liked recipes change
+  useEffect(() => {
+    const refreshCookLists = async () => {
+      if (currentUser?.id && likedRecipesVersion > 0) {
+        try {
+          const cookLists = await getUserCookLists(currentUser.id);
+          setUserCookLists(cookLists);
+          
+          // If we're currently viewing a cooklist, refresh its recipes too
+          if (selectedCookList) {
+            fetchCookListRecipes(selectedCookList.id, cookListSort);
+          }
+        } catch (error) {
+          console.error("Failed to refresh cooklists:", error);
+        }
+      }
+    };
+
+    refreshCookLists();
+  }, [likedRecipesVersion, currentUser?.id, selectedCookList?.id, cookListSort]);
 
   const handleBackClick = () => {
     if (selectedCookList) {
@@ -246,7 +272,7 @@ const fetchCookListRecipes = async (cookListId: number, sort: string) => {
               </div>
 
               {/* Cook Lists */}
-              <div>
+              <div className="mb-8">
                 <h3 className="text-xl font-bold text-blue-800 mb-4">My Cook Lists</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {userCookLists.length > 0 ? (
@@ -277,6 +303,52 @@ const fetchCookListRecipes = async (cookListId: number, sort: string) => {
                       <ChefHat className="w-12 h-12 mx-auto mb-4 text-blue-400" />
                       <p className="text-lg font-medium mb-2">No cook lists yet!</p>
                       <p className="text-sm">Create your first cook list to organize your recipes.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* My Pantry */}
+              <div>
+                <h3 className="text-xl font-bold text-blue-800 mb-4">My Pantry</h3>
+                <div className="bg-white rounded-lg shadow-md p-6 border border-blue-100">
+                  {userIngredients.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {userIngredients.map((ingredient) => (
+                        <div
+                          key={ingredient.ingredient_id}
+                          className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border border-green-100 hover:shadow-md transition-all duration-200"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Package className="w-4 h-4 text-green-600" />
+                              <h4 className="font-semibold text-green-800">{ingredient.name}</h4>
+                            </div>
+                            <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                              {ingredient.category}
+                            </span>
+                          </div>
+                          <p className="text-green-700 font-medium mb-1">
+                            Quantity: {ingredient.quantity}
+                          </p>
+                          {ingredient.season && (
+                            <p className="text-green-600 text-sm">
+                              Season: {ingredient.season}
+                            </p>
+                          )}
+                          {ingredient.price && (
+                            <p className="text-green-600 text-sm">
+                              Est. Price: ${ingredient.price}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-blue-600">
+                      <Package className="w-12 h-12 mx-auto mb-4 text-blue-400" />
+                      <p className="text-lg font-medium mb-2">Your pantry is empty!</p>
+                      <p className="text-sm">Add ingredients to track what you have available for cooking.</p>
                     </div>
                   )}
                 </div>

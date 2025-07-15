@@ -7,6 +7,7 @@ import { RecipeDialog } from "./RecipeDialog";
 import { CookListDialog } from "./CookListDialog";
 import { useToast } from "@/hooks/use-toast";
 import { likeRecipe, unlikeRecipe, checkRecipeLiked } from "@/services/api";
+import { useLikedRecipes } from "@/contexts/LikedRecipesContext";
 
 interface Recipe {
   id: number;
@@ -30,6 +31,7 @@ export const RecipeCard = ({ recipe }: RecipeCardProps) => {
   const [isLiked, setIsLiked] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { refreshLikedRecipes } = useLikedRecipes();
 
   // Check if recipe is liked when component mounts
   useEffect(() => {
@@ -79,6 +81,8 @@ export const RecipeCard = ({ recipe }: RecipeCardProps) => {
           description: `"${recipe.title}" has been added to your liked recipes`,
         });
       }
+      // Trigger refresh of liked recipes in parent components
+      refreshLikedRecipes();
     } catch (error) {
       toast({
         title: "Error",
@@ -130,22 +134,30 @@ export const RecipeCard = ({ recipe }: RecipeCardProps) => {
             <div>
               <h4 className="text-sm font-medium text-gray-700 mb-1">Ingredients:</h4>
               <p className="text-sm text-gray-600 line-clamp-2">
-                {recipe.ingredients.slice(0, 3).join(", ")}
-                {recipe.ingredients.length > 3 && "..."}
+                {recipe.ingredients && recipe.ingredients.length > 0 
+                  ? `${recipe.ingredients.slice(0, 3).join(", ")}${recipe.ingredients.length > 3 ? "..." : ""}`
+                  : "No ingredients listed"
+                }
               </p>
             </div>
             
             <div>
               <h4 className="text-sm font-medium text-gray-700 mb-1">Instructions:</h4>
               <p className="text-sm text-gray-600 line-clamp-2">
-                {recipe.instructions[0]}
+                {recipe.instructions && recipe.instructions.length > 0 
+                  ? recipe.instructions[0]
+                  : "No instructions available"
+                }
               </p>
             </div>
 
             <div>
               <h4 className="text-sm font-medium text-gray-700 mb-1">Added at:</h4>
               <p className="text-sm text-gray-600 line-clamp-2">
-                {new Date(recipe.added_at).toLocaleString()}
+                {recipe.added_at 
+                  ? new Date(recipe.added_at).toLocaleString()
+                  : "Date not available"
+                }
               </p>
             </div> 
           </div>

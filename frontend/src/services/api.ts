@@ -51,6 +51,18 @@ export interface User {
   level: string;
 }
 
+export interface UserIngredient {
+  user_id: number;
+  ingredient_id: number;
+  name: string;
+  quantity: string;
+  category: string;
+  season: string;
+  price: number | null;
+  added_at: string;
+  updated_at: string;
+}
+
 export interface UserStats {
   points: number;
   cookify_level: string;
@@ -526,6 +538,83 @@ export const checkRecipeLiked = async (recipeId: number) => {
 
   const response = await fetch(`${API_BASE_URL}/recipes/${recipeId}/liked`, {
     method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  return handleApiResponse(response);
+};
+
+// User Ingredients API
+export const getUserIngredients = async (userId: number): Promise<UserIngredient[]> => {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/ingredients`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to fetch user ingredients");
+  }
+
+  const data = await response.json();
+  return data.ingredients;
+};
+
+export const addUserIngredient = async (userId: number, ingredientId: number, quantity: string) => {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/ingredients`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify({ ingredient_id: ingredientId, quantity }),
+  });
+
+  return handleApiResponse(response);
+};
+
+export const updateUserIngredient = async (userId: number, ingredientId: number, quantity: string) => {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/ingredients/${ingredientId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify({ quantity }),
+  });
+
+  return handleApiResponse(response);
+};
+
+export const removeUserIngredient = async (userId: number, ingredientId: number) => {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/ingredients/${ingredientId}`, {
+    method: "DELETE",
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${token}`,

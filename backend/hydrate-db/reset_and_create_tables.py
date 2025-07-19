@@ -25,6 +25,7 @@ def reset_and_create_tables():
         "CookList_Recipes",
         "Ingredients",
         "Recipe_Ingredients",
+        "User_Ingredients",
         "Recipe_Likes",
         "Recipes",
         "Users",
@@ -76,6 +77,18 @@ def reset_and_create_tables():
             CREATE TABLE IF NOT EXISTS Ingredients (
                 Ingredient_ID INT AUTO_INCREMENT PRIMARY KEY,
                 Name VARCHAR(255) NOT NULL
+            )
+        """)
+
+        # User_Ingredients
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS User_Ingredients (
+                User_ID       INT         NOT NULL,
+                Ingredient_ID INT         NOT NULL,
+                Acquired_At   DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (User_ID, Ingredient_ID),
+                FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE,
+                FOREIGN KEY (Ingredient_ID) REFERENCES Ingredients(Ingredient_ID) ON DELETE CASCADE
             )
         """)
 
@@ -145,9 +158,14 @@ def reset_and_create_tables():
         # ──────────────── Indexes ────────────────
         # speed up ingredient name lookups
         cursor.execute("CREATE INDEX idx_ingredients_name ON Ingredients (Name);")
+        
         # speed up joins/filtering on Recipe_Ingredients
         cursor.execute("CREATE INDEX idx_ri_recipe ON Recipe_Ingredients (Recipe_ID);")
         cursor.execute("CREATE INDEX idx_ri_ingredient ON Recipe_Ingredients (Ingredient_ID);")
+
+        # speed up joins/filtering on User_Ingredients
+        cursor.execute("CREATE INDEX idx_ui_user ON User_Ingredients (User_ID);")
+        cursor.execute("CREATE INDEX idx_ui_ingredient ON User_Ingredients (Ingredient_ID);")
 
         # for basic feature 2
         # speeds up filtering for recipes

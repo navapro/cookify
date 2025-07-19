@@ -86,6 +86,31 @@ def create_dummy_users(cursor, conn, n=10):
 
     return created_ids
 
+def create_dummy_user_ingredients(cursor, conn, user_ids,  num_of_sample_ingredients, max_ingredients_per_user=5):
+    """
+    For each user in user_ids, assign between 1 and max_ingredients_per_user random ingredients.
+    Each assignment gets a random Acquired_At timestamp within the last year.
+    """
+    for u in user_ids:
+        # pick how many ingredients this user has
+        n = random.randint(1, min(max_ingredients_per_user,  num_of_sample_ingredients))
+        picks = random.sample(range(1, num_of_sample_ingredients), n)
+        for ing in picks:
+            quantity = random.randint(1, 100)
+            try:
+                cursor.execute(
+                    """
+                    INSERT INTO User_Ingredients (User_ID, Ingredient_ID, Quantity)
+                    VALUES (%s, %s, %s)
+                    """,
+                    (u, ing, quantity)
+                )
+            except IntegrityError:
+                # skip if already exists
+                conn.rollback()
+        conn.commit()
+    print("Populated User_Ingredients.")
+
 def create_dummy_cooklists(cursor, conn, user_ids, lists_per_user=2):
     """
     For each user in user_ids, create `lists_per_user` CookLists.

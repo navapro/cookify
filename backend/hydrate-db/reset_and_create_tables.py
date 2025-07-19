@@ -149,6 +149,11 @@ def reset_and_create_tables():
         cursor.execute("CREATE INDEX idx_ri_recipe ON Recipe_Ingredients (Recipe_ID);")
         cursor.execute("CREATE INDEX idx_ri_ingredient ON Recipe_Ingredients (Ingredient_ID);")
 
+        # for basic feature 2
+        # speeds up filtering for recipes
+        cursor.execute("CREATE INDEX idx_recipe_cuisine ON Recipes (Cuisine);")
+        cursor.execute("CREATE INDEX idx_recipe_duration ON Recipes (Duration);")
+        
         # for basic feature 3
         # speeds up ordering by date added
         cursor.execute("CREATE INDEX idx_added_at ON CookList_Recipes (CookList_ID, Added_At);")

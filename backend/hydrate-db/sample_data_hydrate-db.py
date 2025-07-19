@@ -7,7 +7,8 @@ from hydrate_db_helpers import (
     create_dummy_cooklists,
     create_dummy_cooklist_recipes,
     create_dummy_recipe_likes,
-    create_dummy_cooklist_likes
+    create_dummy_cooklist_likes,
+    create_dummy_user_ingredients
 )
 
 # If you also want to parse ingredient strings, re-import parse_ingredient
@@ -177,6 +178,7 @@ def main():
     create_dummy_cooklist_recipes(cursor, conn, cooklist_ids, recipe_ids)
     create_dummy_recipe_likes(cursor, conn, user_ids, recipe_ids, like_probability=0.3)
     create_dummy_cooklist_likes(cursor, conn, user_ids, cooklist_ids, like_probability=0.2)
+    create_dummy_user_ingredients(cursor, conn, user_ids, 15)
 
     cursor.close()
     conn.close()

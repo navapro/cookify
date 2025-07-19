@@ -83,9 +83,9 @@ def reset_and_create_tables():
         # User_Ingredients
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS User_Ingredients (
-                User_ID       INT         NOT NULL,
-                Ingredient_ID INT         NOT NULL,
-                Acquired_At   DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                User_ID INT NOT NULL,
+                Ingredient_ID INT NOT NULL,
+                Quantity VARCHAR(100) NOT NULL,
                 PRIMARY KEY (User_ID, Ingredient_ID),
                 FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE,
                 FOREIGN KEY (Ingredient_ID) REFERENCES Ingredients(Ingredient_ID) ON DELETE CASCADE

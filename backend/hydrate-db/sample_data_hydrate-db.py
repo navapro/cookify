@@ -1,5 +1,6 @@
 import mysql.connector
 import random
+import datetime
 from pathlib import Path
 import sys
 from hydrate_db_helpers import (
@@ -8,7 +9,8 @@ from hydrate_db_helpers import (
     create_dummy_cooklist_recipes,
     create_dummy_recipe_likes,
     create_dummy_cooklist_likes,
-    create_dummy_user_ingredients
+    create_dummy_user_ingredients,
+    # setup_user2_test_data
 )
 
 # If you also want to parse ingredient strings, re-import parse_ingredient
@@ -167,6 +169,7 @@ def main():
     ids = create_dummy_users(cursor, conn, n=10)
     admin_id = ids['admin_id']
     user_ids = ids['user_ids']
+    # test_chef_id = ids.get('test_chef_id', 2)  # Get TestChef ID, default to 2 if not found
 
     # 2) CookLists
     cooklist_ids = create_dummy_cooklists(cursor, conn, user_ids, lists_per_user=2)
@@ -175,10 +178,14 @@ def main():
     recipe_ids = create_dummy_recipes(cursor, conn, admin_id, num_recipes=20)
 
     # 4) Associations
-    create_dummy_cooklist_recipes(cursor, conn, cooklist_ids, recipe_ids)
+    create_dummy_cooklist_recipes(cursor, conn, cooklist_ids, recipe_ids, user_ids)
     create_dummy_recipe_likes(cursor, conn, user_ids, recipe_ids, like_probability=0.3)
     create_dummy_cooklist_likes(cursor, conn, user_ids, cooklist_ids, like_probability=0.2)
     create_dummy_user_ingredients(cursor, conn, user_ids, 15)
+    
+    # 5) Create comprehensive test data for TestChef (User 2)
+    # TestChef user was already created in create_dummy_users with ID=2
+    # setup_user2_test_data(cursor, conn, recipe_ids)
 
     cursor.close()
     conn.close()

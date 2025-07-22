@@ -24,7 +24,7 @@ CREATE TABLE Users (
   Date_of_Birth DATE,
   Profile_Image VARCHAR(255), -- Store file path/URL
   Points INT DEFAULT 0,
-  Cookify_Level VARCHAR(50) DEFAULT '🐀 Street Rat',
+  Cookify_Level VARCHAR(50) DEFAULT 'Street Rat',
   Created_At DATETIME DEFAULT CURRENT_TIMESTAMP,
   Updated_At DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

@@ -155,6 +155,125 @@ def reset_and_create_tables():
             )
         """)
 
+        # Cooklist_Editors (user can edit cooklist)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS Cooklist_Editors (
+                CookList_ID INT NOT NULL,
+                User_ID INT NOT NULL,
+                Granted_At DATETIME DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (CookList_ID, User_ID),
+                FOREIGN KEY (CookList_ID) REFERENCES CookLists(CookList_ID) ON DELETE CASCADE,
+                FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE
+            )
+        """)
+
+        # TRIGGERS
+        # Advanced feature 2: trigger for levelling up
+        # when they plan a cooklist/add a recipe/make a recipe/other ppl like their recipes → 
+        # all contribute to increasing the user’s points via a trigger → 
+        # when they reach a certain threshold of points, it’ll trigger them to level up!
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS User_Levels (
+                Level_Name VARCHAR(50) PRIMARY KEY,
+                Min_Points INT NOT NULL,
+                Image_Path varchar(1024) NOT NULL
+            )
+        """) # this represents the levels where users level up
+
+        cursor.execute("""
+            INSERT INTO User_Levels (Level_Name, Min_Points, Image_Path) VALUES
+            ('Street Rat', 0, 'rat'),
+            ('Dishwasher', 10, 'dishwasher'),
+            ('Prep Cook', 25, 'prepcook'),
+            ('Chef', 100, 'chef'),
+            ('Sous Chef', 250, 'souschef'),
+            ('Head Chef', 500, 'headchef'),
+            ('Michelin Star Chef', 1000, 'starchef'),
+            ('Remy the Rat', 10000, 'remy')
+        """)
+
+        # Trigger for when a user creates a cooklist
+        cursor.execute("""
+            CREATE TRIGGER After_Cooklist_Create
+            AFTER INSERT ON CookLists
+            FOR EACH ROW
+            BEGIN
+                -- Award 1 point to the user who created the cooklist
+                UPDATE Users 
+                SET Points = Points + 1 
+                WHERE User_ID = NEW.User_ID;
+            END
+        """)
+
+        # Trigger for when a user likes a cooklist
+        cursor.execute("""
+            CREATE TRIGGER After_Cooklist_Like
+            AFTER INSERT ON CookList_Likes
+            FOR EACH ROW
+            BEGIN
+                DECLARE cooklist_owner INT;
+                
+                -- Find the cooklist owner
+                SELECT User_ID INTO cooklist_owner 
+                FROM CookLists 
+                WHERE CookList_ID = NEW.CookList_ID;
+                
+                -- Award 1 point to the cooklist owner
+                UPDATE Users 
+                SET Points = Points + 1 
+                WHERE User_ID = cooklist_owner;
+            END
+        """)
+
+        # Trigger for when a user likes a recipe
+        cursor.execute("""
+            CREATE TRIGGER After_Recipe_Like
+            AFTER INSERT ON Recipe_Likes
+            FOR EACH ROW
+            BEGIN
+                DECLARE recipe_owner INT;
+                
+                -- Find the recipe owner
+                SELECT User_ID INTO recipe_owner 
+                FROM Recipes 
+                WHERE Recipe_ID = NEW.Recipe_ID;
+                
+                -- Award 1 point to the recipe owner
+                UPDATE Users 
+                SET Points = Points + 1 
+                WHERE User_ID = recipe_owner;
+            END
+        """)
+
+        # Trigger for when a user's points increase to check for level up
+        cursor.execute("""
+            CREATE TRIGGER Points_Update
+            AFTER UPDATE ON Users
+            FOR EACH ROW
+            BEGIN
+                IF NEW.Points > OLD.Points THEN
+                    -- Find the highest level the user qualifies for
+                    DECLARE new_level VARCHAR(50);
+                    DECLARE new_image_path VARCHAR(1024);
+                    
+                    SELECT Level_Name, Image_Path 
+                    INTO new_level, new_image_path
+                    FROM User_Levels
+                    WHERE Min_Points <= NEW.Points
+                    ORDER BY Min_Points DESC
+                    LIMIT 1;
+                    
+                    -- Update the user's level and profile image if they've reached a new level
+                    IF (NEW.Cookify_Level != new_level) THEN
+                        UPDATE Users 
+                        SET Cookify_Level = new_level,
+                            Profile_Image = new_image_path
+                        WHERE User_ID = NEW.User_ID;
+                    END IF;
+                END IF;
+            END
+        """)
+
         # ──────────────── Indexes ────────────────
         # speed up ingredient name lookups
         cursor.execute("CREATE INDEX idx_ingredients_name ON Ingredients (Name);")

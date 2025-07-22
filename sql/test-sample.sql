@@ -196,6 +196,18 @@ SELECT i.Ingredient_ID, i.Name, ui.Quantity
 FROM Ingredients i, User_Ingredients ui
 WHERE ui.User_ID = 2 AND i.Ingredient_ID = ui.Ingredient_ID;
 
+-- checking your ingredients
+SELECT * FROM My_Ingredients;
+
+-- inserting some recipes and their ingredients
+INSERT INTO Recipes (Recipe_ID, User_ID, Name, Duration, Difficulty, Cuisine, Instructions, Servings, Image_URL) VALUES
+(314, 1, 'you can make this', 120, 'Medium', 'Italian', 'cook good. good cook.', 1, 'very real link'),
+(159, 1, 'you cannot make this', 120, 'Medium', 'Italian', 'cook good. good cook.', 1, 'very real link');
+
+INSERT INTO Recipe_Ingredients (Recipe_ID, Ingredient_ID, Quantity, Unit) VALUES
+(314, 1, 1, 'piece'),
+(159, 1, 101, 'pieces');
+
 -- query for all recipes you can make
 SELECT has.Recipe_ID
 FROM (SELECT ri.Recipe_ID, COUNT(*) AS IngredientCount

@@ -124,38 +124,38 @@ LIMIT 5;
 -- feature 5: trigger to update liked cooklists
 -- NOTE: since trigger already exists, it will throw an error if this is ran so we commented them out
 -- trigger for automatically generating 'Liked Recipes' cooklist
--- delimiter //
--- CREATE TRIGGER CreateLikedRecipes
--- AFTER INSERT ON Users
--- FOR EACH ROW
--- 	BEGIN
---     IF ((SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') = 0) THEN
--- 		  INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (NEW.User_ID, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
---     END IF;
--- 	END; //
+delimiter //
+CREATE TRIGGER CreateLikedRecipes
+AFTER INSERT ON Users
+FOR EACH ROW
+	BEGIN
+    IF ((SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') = 0) THEN
+		  INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (NEW.User_ID, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
+    END IF;
+	END; //
 
 -- -- trigger for rejecting when a user attempts to create a 'Liked Recipes' cooklist on their own
--- delimiter //
--- CREATE TRIGGER UniqueLikedCooklist
--- BEFORE INSERT ON Cooklists
--- FOR EACH ROW
--- 	BEGIN
--- 		IF (NEW.Name = 'Liked Recipes' AND (SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') > 0) THEN
--- 			SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Only one Liked Recipes cooklist can exist!';
--- 		END IF;
--- 	END; //
+delimiter //
+CREATE TRIGGER UniqueLikedCooklist
+BEFORE INSERT ON Cooklists
+FOR EACH ROW
+	BEGIN
+		IF (NEW.Name = 'Liked Recipes' AND (SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') > 0) THEN
+			SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Only one Liked Recipes cooklist can exist!';
+		END IF;
+	END; //
 
 -- -- creating trigger, assumes all users have a liked recipes cooklist by default
--- delimiter //
--- CREATE TRIGGER AddToLikedRecipes
--- AFTER INSERT ON Recipe_Likes
--- FOR EACH ROW
--- 	BEGIN
--- 		IF ((SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') = 0) THEN
--- 			INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (NEW.User_ID, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
--- 		END IF;
--- 		INSERT INTO Cooklist_Recipes VALUES ((SELECT Cooklist_ID FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes'), NEW.Recipe_ID, NEW.Liked_At);
--- 	END; //
+delimiter //
+CREATE TRIGGER AddToLikedRecipes
+AFTER INSERT ON Recipe_Likes
+FOR EACH ROW
+	BEGIN
+		IF ((SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') = 0) THEN
+			INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (NEW.User_ID, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
+		END IF;
+		INSERT INTO Cooklist_Recipes VALUES ((SELECT Cooklist_ID FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes'), NEW.Recipe_ID, NEW.Liked_At);
+	END; //
 
 -- creating user and their Liked Recipes cooklist
 INSERT INTO Users (Name, Email, Password, Date_of_Birth, Points, Cookify_Level) VALUES
@@ -186,3 +186,24 @@ SELECT * FROM Recipes r WHERE EXISTS (SELECT Recipe_ID FROM Cooklist_Recipes WHE
 
 -- attempting to create a new Liked Recipes Cooklist for Wayne (which intentionally gives an error)
 -- INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (6, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
+
+-- advanced feature 1: 
+-- inserting extra ingredients so that user 2 has enough to make recipe 1
+INSERT INTO User_Ingredients (User_ID, Ingredient_ID, Quantity) VALUES (2, 2, 2);
+
+-- creating view (if you're user 2)
+CREATE VIEW My_Ingredients AS
+SELECT i.Ingredient_ID, i.Name, ui.Quantity
+FROM Ingredients i, User_Ingredients ui
+WHERE ui.User_ID = 2 AND i.Ingredient_ID = ui.Ingredient_ID;
+
+-- query for all recipes you can make
+SELECT has.Recipe_ID
+FROM (SELECT ri.Recipe_ID, COUNT(*) AS IngredientCount
+FROM Recipe_Ingredients ri
+GROUP BY ri.Recipe_ID) AS required,
+(SELECT ri.Recipe_ID, COUNT(*) AS IngredientCount
+FROM Recipe_Ingredients ri, My_Ingredients mi
+WHERE ri.Ingredient_ID = mi.Ingredient_ID AND ri.Quantity <= mi.Quantity
+GROUP BY ri.Recipe_ID) AS has
+WHERE required.Recipe_ID = has.Recipe_ID AND required.IngredientCount = has.IngredientCount;

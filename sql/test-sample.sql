@@ -185,3 +185,24 @@ SELECT * FROM Recipes r WHERE EXISTS (SELECT Recipe_ID FROM Cooklist_Recipes WHE
 
 -- attempting to create a new Liked Recipes Cooklist for Wayne (which intentionally gives an error)
 -- INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (6, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
+
+-- advanced feature 1: 
+-- inserting extra ingredients so that user 2 has enough to make recipe 1
+INSERT INTO User_Ingredients (User_ID, Ingredient_ID, Quantity) VALUES (2, 2, 2);
+
+-- creating view (if you're user 2)
+CREATE VIEW My_Ingredients AS
+SELECT i.Ingredient_ID, i.Name, ui.Quantity
+FROM Ingredients i, User_Ingredients ui
+WHERE ui.User_ID = 2 AND i.Ingredient_ID = ui.Ingredient_ID;
+
+-- query for all recipes you can make
+SELECT has.Recipe_ID
+FROM (SELECT ri.Recipe_ID, COUNT(*) AS IngredientCount
+FROM Recipe_Ingredients ri
+GROUP BY ri.Recipe_ID) AS required,
+(SELECT ri.Recipe_ID, COUNT(*) AS IngredientCount
+FROM Recipe_Ingredients ri, My_Ingredients mi
+WHERE ri.Ingredient_ID = mi.Ingredient_ID AND ri.Quantity <= mi.Quantity
+GROUP BY ri.Recipe_ID) AS has
+WHERE required.Recipe_ID = has.Recipe_ID AND required.IngredientCount = has.IngredientCount;

@@ -5,7 +5,6 @@ CREATE DATABASE IF NOT EXISTS cookify;
 USE cookify;
 
 -- Drop tables if they exist (for clean slate)
-DROP TABLE IF EXISTS User_Ingredients;
 DROP TABLE IF EXISTS User_Activities;
 DROP TABLE IF EXISTS CookList_Likes;
 DROP TABLE IF EXISTS Recipe_Likes;
@@ -15,7 +14,6 @@ DROP TABLE IF EXISTS CookLists;
 DROP TABLE IF EXISTS Ingredients;
 DROP TABLE IF EXISTS Recipes;
 DROP TABLE IF EXISTS Users;
-DROP VIEW IF EXISTS My_Ingredients;
 
 -- 1. Users Table - The chefs in our app
 CREATE TABLE Users (
@@ -68,16 +66,6 @@ CREATE TABLE Recipe_Ingredients (
   Is_Optional BOOLEAN DEFAULT FALSE,
   PRIMARY KEY (Recipe_ID, Ingredient_ID),
   FOREIGN KEY (Recipe_ID) REFERENCES Recipes(Recipe_ID) ON DELETE CASCADE,
-  FOREIGN KEY (Ingredient_ID) REFERENCES Ingredients(Ingredient_ID)
-);
-
-CREATE TABLE User_Ingredients (
-  User_ID INT NOT NULL,
-  Ingredient_ID INT NOT NULL,
-  Quantity VARCHAR(50), -- e.g., "2 cups", "1 tablespoon"
-  Unit VARCHAR(20),     -- e.g., "cups", "grams", "pieces"
-  PRIMARY KEY (User_ID, Ingredient_ID),
-  FOREIGN KEY (User_ID) REFERENCES users(User_ID) ON DELETE CASCADE,
   FOREIGN KEY (Ingredient_ID) REFERENCES Ingredients(Ingredient_ID)
 );
 

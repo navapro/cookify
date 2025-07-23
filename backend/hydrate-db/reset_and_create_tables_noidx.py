@@ -148,9 +148,6 @@ def reset_and_create_tables():
         cursor.execute("DROP TRIGGER IF EXISTS UniqueLikedCooklist;")
         cursor.execute("DROP TRIGGER IF EXISTS AddToLikedRecipes;")
 
-        # for advanced feature 1
-        cursor.execute("DROP VIEW IF EXISTS My_Ingredients;")
-
         # trigger for automatically generating 'Liked Recipes' cooklist
         cursor.execute("""delimiter //
                         CREATE TRIGGER CreateLikedRecipes

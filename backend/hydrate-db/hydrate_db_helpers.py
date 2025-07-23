@@ -188,26 +188,63 @@ def create_dummy_cooklists(cursor, conn, user_ids, lists_per_user=2):
     Returns a list of all CookList_IDs.
     """
     cooklist_ids = []
+    
+    # First check which users already have cooklists
+    existing_counts = {}
+    try:
+        cursor.execute("SELECT User_ID, COUNT(*) FROM CookLists GROUP BY User_ID")
+        existing_counts = {uid: count for uid, count in cursor.fetchall()}
+    except Exception as e:
+        print(f"Warning: Could not check existing cooklists: {e}")
+    
     for u in user_ids:
-        for i in range(lists_per_user):
-            name = f"{u}'s List {i+1}"
-            desc = f"A sample cooklist #{i+1} for user {u}"
+        # Skip users who already have enough cooklists
+        if existing_counts.get(u, 0) >= lists_per_user:
+            # Get IDs of existing cooklists for this user
+            try:
+                cursor.execute("SELECT CookList_ID FROM CookLists WHERE User_ID = %s LIMIT %s", (u, lists_per_user))
+                for row in cursor:
+                    cooklist_ids.append(row[0])
+            except Exception as e:
+                print(f"Warning: Error getting existing cooklists for user {u}: {e}")
+            continue
+            
+        # Calculate how many more lists to create
+        to_create = lists_per_user - existing_counts.get(u, 0)
+        
+        for i in range(to_create):
+            list_num = existing_counts.get(u, 0) + i + 1
+            name = f"{u}'s List {list_num}"
+            desc = f"A sample cooklist #{list_num} for user {u}"
             is_public = random.choice([True, False])
             try:
                 cursor.execute(
                     """
-                    INSERT INTO CookLists
+                    INSERT IGNORE INTO CookLists
                       (User_ID, Name, Description, Is_Public)
                     VALUES (%s, %s, %s, %s)
                     """,
                     (u, name, desc, is_public)
                 )
-                conn.commit()
-                cooklist_ids.append(cursor.lastrowid)
+                if cursor.lastrowid:  # If insertion was successful
+                    cooklist_ids.append(cursor.lastrowid)
             except IntegrityError:
-                # (unlikely here) skip duplicates
                 conn.rollback()
-    print(f"Created {len(cooklist_ids)} cooklists.")
+                # Try to get the existing ID
+                try:
+                    cursor.execute("SELECT CookList_ID FROM CookLists WHERE User_ID = %s AND Name = %s", (u, name))
+                    result = cursor.fetchone()
+                    if result:
+                        cooklist_ids.append(result[0])
+                except Exception:
+                    pass
+            except Exception as e:
+                print(f"Error creating cooklist for user {u}: {e}")
+                conn.rollback()
+                continue
+            conn.commit()
+    
+    print(f"Created/found {len(cooklist_ids)} cooklists.")
     return cooklist_ids
 
 def create_dummy_cooklist_recipes(cursor, conn, cooklist_ids, recipe_ids, user_ids, max_recipes_per_list=5):
@@ -290,17 +327,7 @@ def create_dummy_recipe_likes(cursor, conn, user_ids, recipe_ids, like_probabili
                 cooklist_id = result[0]
                 cooklist_map[u] = cooklist_id
                 
-                # Make sure user is an editor
-                cursor.execute(
-                    "SELECT COUNT(*) FROM Cooklist_Editors WHERE CookList_ID = %s AND User_ID = %s",
-                    (cooklist_id, u)
-                )
-                if cursor.fetchone()[0] == 0:
-                    cursor.execute(
-                        "INSERT INTO Cooklist_Editors (CookList_ID, User_ID) VALUES (%s, %s)",
-                        (cooklist_id, u)
-                    )
-                    conn.commit()
+                # No longer need to make user an editor
             else:
                 print(f"Warning: Failed to find 'Liked Recipes' cooklist for user {u}")
         except Exception as e:

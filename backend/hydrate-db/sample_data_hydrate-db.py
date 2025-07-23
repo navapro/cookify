@@ -180,6 +180,11 @@ def main():
     conn = mysql.connector.connect(**DB_CONFIG)
     cursor = conn.cursor(buffered=True)
 
+    # Disable triggers first
+    # print("Temporarily disabling triggers...")
+    # cursor.execute("SET @TRIGGER_DISABLED = 1;")
+    # cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
+
     # 1) Users
     ids = create_dummy_users(cursor, conn, n=10)
     admin_id = ids['admin_id']
@@ -191,6 +196,11 @@ def main():
 
     # 3) Recipes & Ingredients
     recipe_ids = create_dummy_recipes(cursor, conn, admin_id, num_recipes=20)
+
+    # Re-enable triggers for subsequent operations
+    # print("Re-enabling triggers...")
+    # cursor.execute("SET @TRIGGER_DISABLED = NULL;")
+    # cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
 
     # 4) Associations
     create_dummy_cooklist_recipes(cursor, conn, cooklist_ids, recipe_ids, user_ids)

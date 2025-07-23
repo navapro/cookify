@@ -31,6 +31,7 @@ GET_RECIPES_JOINED_SQL = """
 WITH RecipeData AS (
     SELECT r.Recipe_ID, r.Name, r.Duration, r.Difficulty, r.Cuisine,
            r.Instructions,
+           r.Image_URL,
            i.Name AS Ingredient
     FROM Recipes r
     LEFT JOIN Recipe_Ingredients ri ON r.Recipe_ID = ri.Recipe_ID
@@ -47,7 +48,7 @@ LIMIT :limit OFFSET :offset;
 """
 
 GET_RECIPE_JOINED_SQL = """
-SELECT r.Recipe_ID, r.Name, r.Duration, r.Difficulty, r.Cuisine, r.Instructions,
+SELECT r.Recipe_ID, r.Name, r.Duration, r.Difficulty, r.Cuisine, r.Instructions,  r.Image_URL,
        GROUP_CONCAT(i.Name) AS Ingredients
 FROM Recipes r
 LEFT JOIN Recipe_Ingredients ri ON r.Recipe_ID = ri.Recipe_ID
@@ -83,7 +84,8 @@ def get_all_recipes():
                 "difficulty": row[3],
                 "cuisine": row[4],
                 "instructions": row[5],
-                "ingredients": row[6].split(',') if row[6] else []
+                "image_url": row[6],
+                "ingredients": row[7].split(',') if row[7] else []
             })
         return jsonify(recipes), 200
     except Exception as e:
@@ -102,7 +104,8 @@ def get_recipe(recipe_id):
                 "difficulty": recipe[3],
                 "cuisine": recipe[4],
                 "instructions": recipe[5],
-                "ingredients": recipe[6].split(',') if recipe[6] else []
+                "image_url": recipe[6],
+                "ingredients": recipe[7].split(',') if recipe[7] else []
             }), 200
         else:
             return jsonify({"error": "Recipe not found"}), 404

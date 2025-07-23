@@ -206,9 +206,21 @@ def get_cooklist_recipes_sorted(cooklist_id):
         order_clause = "clr.Added_At DESC"
 
     try:
+        # First, check if the cooklist exists
+        cooklist_check = db.session.execute(
+            text("SELECT COUNT(*) FROM CookLists WHERE CookList_ID = :id"),
+            {"id": cooklist_id}
+        ).fetchone()
+        
+        if not cooklist_check or cooklist_check[0] == 0:
+            return jsonify({"error": "Cooklist not found"}), 404
+            
+        # Proceed to get recipes
         recipes_result = db.session.execute(
             text(f"""
-                SELECT r.Recipe_ID, r.Name, r.Cuisine, r.Difficulty, r.Instructions, clr.Added_At AS Added_To_List_At
+                SELECT r.Recipe_ID, r.Name, r.Cuisine, r.Difficulty, r.Instructions, 
+                       IFNULL(clr.Added_At, NOW()) AS Added_To_List_At,
+                       r.Image_URL
                 FROM CookList_Recipes clr
                 JOIN Recipes r ON clr.Recipe_ID = r.Recipe_ID
                 WHERE clr.CookList_ID = :id
@@ -220,10 +232,10 @@ def get_cooklist_recipes_sorted(cooklist_id):
         for row in recipes_result:
             recipe_id = row[0]
             
-            # Get detailed ingredients for this recipe
+           # Get detailed ingredients for this recipe
             ingredients_result = db.session.execute(
                 text("""
-                    SELECT ri.Ingredient_ID, i.Name, ri.Quantity, ri.Unit, i.Category
+                    SELECT ri.Ingredient_ID, i.Name, ri.Quantity, ri.Unit
                     FROM Recipe_Ingredients ri
                     JOIN Ingredients i ON ri.Ingredient_ID = i.Ingredient_ID
                     WHERE ri.Recipe_ID = :recipe_id
@@ -237,8 +249,7 @@ def get_cooklist_recipes_sorted(cooklist_id):
                     "ingredient_id": ing_row[0],
                     "name": ing_row[1],
                     "quantity": ing_row[2],
-                    "unit": ing_row[3],
-                    "category": ing_row[4]
+                    "unit": ing_row[3]
                 })
             
             recipes.append({
@@ -249,7 +260,11 @@ def get_cooklist_recipes_sorted(cooklist_id):
                 "instructions": row[4].split('\n') if row[4] else [],
                 "added_at": row[5].isoformat() if row[5] else None,
                 "ingredients": ingredients,
+                "image": row[6] or "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=500&h=300"
             })
         return jsonify(recipes)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        import traceback
+        print(f"Error in get_cooklist_recipes_sorted: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({"error": f"Failed to fetch cooklist recipes: {str(e)}"}), 500

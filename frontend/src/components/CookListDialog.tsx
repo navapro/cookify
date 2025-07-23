@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { getUserCookLists, addRecipeToCookList } from "@/services/api";
 import { getUser } from "@/utils/auth";
+import { useCookLists } from "@/contexts/CookListsContext";
 
 interface Recipe {
   id: number;
@@ -35,6 +36,7 @@ export const CookListDialog = ({ recipe, open, onOpenChange }: CookListDialogPro
   const [addingToList, setAddingToList] = useState<number | null>(null);
   const { toast } = useToast();
   const currentUser = getUser();
+  const { refreshUserCookLists } = useCookLists();
 
   useEffect(() => {
     const fetchCookLists = async () => {
@@ -69,6 +71,8 @@ export const CookListDialog = ({ recipe, open, onOpenChange }: CookListDialogPro
         title: "Recipe Added! 🍳",
         description: `"${recipe.title}" has been added to "${listName}"`,
       });
+      // Refresh cooklists to update recipe counts
+      await refreshUserCookLists();
       onOpenChange(false);
     } catch (error) {
       toast({

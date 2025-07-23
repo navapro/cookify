@@ -40,6 +40,76 @@ def get_user_ingredients(user_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@user_ingredients_bp.route('/<int:user_id>/ingredients', methods=['POST'])
+@jwt_required()
+def add_user_ingredient(user_id):
+    current_user_id = int(get_jwt_identity())
+    if current_user_id != user_id:
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No input data provided"}), 400
+
+        ingredient_name = data.get('name', '').strip()
+        quantity = data.get('quantity', '').strip()
+        category = data.get('category', '').strip()
+        
+        if not ingredient_name or not quantity:
+            return jsonify({"error": "Ingredient name and quantity are required"}), 400
+
+        # First check if ingredient exists in the database
+        existing_ingredient = db.session.execute(
+            text("SELECT Ingredient_ID FROM Ingredients WHERE Name = :name"),
+            {"name": ingredient_name}
+        ).fetchone()
+
+        if existing_ingredient:
+            ingredient_id = existing_ingredient[0]
+        else:
+            # Create new ingredient if it doesn't exist
+            result = db.session.execute(
+                text("INSERT INTO Ingredients (Name, Category) VALUES (:name, :category)"),
+                {"name": ingredient_name, "category": category or 'Other'}
+            )
+            db.session.commit()
+            ingredient_id = result.lastrowid
+
+        # Check if user already has this ingredient
+        user_has_ingredient = db.session.execute(
+            text("SELECT User_ID FROM User_Ingredients WHERE User_ID = :user_id AND Ingredient_ID = :ingredient_id"),
+            {"user_id": current_user_id, "ingredient_id": ingredient_id}
+        ).fetchone()
+
+        if user_has_ingredient:
+            # Update quantity if user already has it
+            db.session.execute(
+                text("UPDATE User_Ingredients SET Quantity = :quantity WHERE User_ID = :user_id AND Ingredient_ID = :ingredient_id"),
+                {"user_id": current_user_id, "ingredient_id": ingredient_id, "quantity": quantity}
+            )
+        else:
+            # Add new user ingredient
+            db.session.execute(
+                text("INSERT INTO User_Ingredients (User_ID, Ingredient_ID, Quantity) VALUES (:user_id, :ingredient_id, :quantity)"),
+                {"user_id": current_user_id, "ingredient_id": ingredient_id, "quantity": quantity}
+            )
+        
+        db.session.commit()
+
+        return jsonify({
+            "message": "Ingredient added to pantry successfully",
+            "ingredient": {
+                "ingredient_id": ingredient_id,
+                "name": ingredient_name,
+                "quantity": quantity,
+                "category": category or 'Other'
+            }
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
 @user_ingredients_bp.route('/<int:user_id>/ingredients/<int:ingredient_id>', methods=['PUT'])
 @jwt_required()
 def update_user_ingredient(user_id, ingredient_id):

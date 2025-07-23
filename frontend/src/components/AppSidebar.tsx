@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, BookOpen, User, LogOut, ShoppingCart } from "lucide-react";
+import { useRecipes } from "@/contexts/RecipesContext";
 import {
   Sidebar,
   SidebarContent,
@@ -42,11 +43,16 @@ const sidebarItems = [
   },
 ];
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  onProfileClick?: () => void;
+}
+
+export function AppSidebar({ onProfileClick }: AppSidebarProps = {}) {
   const [createCooklistDialogOpen, setCreateCooklistDialogOpen] = useState(false);
   const [createRecipeDialogOpen, setCreateRecipeDialogOpen] = useState(false);
   const [smartShoppingDialogOpen, setSmartShoppingDialogOpen] = useState(false);
   const navigate = useNavigate();
+  const { refreshUserRecipes } = useRecipes();
 
   const handleAction = (action: string) => {
     console.log(`Action triggered: ${action}`);
@@ -58,7 +64,11 @@ export function AppSidebar() {
     } else if (action === "smart-shopping") {
       setSmartShoppingDialogOpen(true);
     } else if (action === "my-profile") {
-      navigate("/profile");
+      if (onProfileClick) {
+        onProfileClick();
+      } else {
+        navigate("/profile");
+      }
     } else if (action === "logout") {
       localStorage.removeItem('access_token');
       navigate('/login');
@@ -93,12 +103,21 @@ export function AppSidebar() {
 
       <CreateCooklistDialog 
         open={createCooklistDialogOpen} 
-        onOpenChange={setCreateCooklistDialogOpen} 
+        onOpenChange={setCreateCooklistDialogOpen}
+        onCooklistCreated={() => {
+          // Trigger a refresh event that Profile can listen to
+          window.dispatchEvent(new Event('cooklist-created'));
+        }}
       />
 
       <CreateRecipeDialog 
         open={createRecipeDialogOpen} 
-        onOpenChange={setCreateRecipeDialogOpen} 
+        onOpenChange={setCreateRecipeDialogOpen}
+        onRecipeCreated={() => {
+          refreshUserRecipes();
+          // Also trigger a custom event for other components
+          window.dispatchEvent(new Event('recipe-created'));
+        }}
       />
 
       <SmartShoppingDialog 

@@ -1,13 +1,14 @@
 
 import { useState, useEffect } from "react";
-import { Clock, ChefHat, Plus, Heart } from "lucide-react";
+import { Clock, ChefHat, Plus, Heart, Trash2, Eye } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { RecipeDialog } from "./RecipeDialog";
 import { CookListDialog } from "./CookListDialog";
 import { useToast } from "@/hooks/use-toast";
-import { likeRecipe, unlikeRecipe, checkRecipeLiked } from "@/services/api";
+import { likeRecipe, unlikeRecipe, checkRecipeLiked, deleteRecipe } from "@/services/api";
 import { useLikedRecipes } from "@/contexts/LikedRecipesContext";
+import { useRecipes } from "@/contexts/RecipesContext";
 
 interface Recipe {
   id: number;
@@ -23,15 +24,19 @@ interface Recipe {
 
 interface RecipeCardProps {
   recipe: Recipe;
+  showDeleteButton?: boolean;
+  onDelete?: () => void;
 }
 
-export const RecipeCard = ({ recipe }: RecipeCardProps) => {
+export const RecipeCard = ({ recipe, showDeleteButton = false, onDelete }: RecipeCardProps) => {
   const [recipeDialogOpen, setRecipeDialogOpen] = useState(false);
   const [cookListDialogOpen, setCookListDialogOpen] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
   const { refreshLikedRecipes } = useLikedRecipes();
+  const { refreshUserRecipes } = useRecipes();
 
   // Check if recipe is liked when component mounts
   useEffect(() => {
@@ -64,6 +69,17 @@ export const RecipeCard = ({ recipe }: RecipeCardProps) => {
   };
 
   const handleLikeRecipe = async () => {
+    // Check if user is logged in
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to like recipes",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       if (isLiked) {
@@ -91,6 +107,31 @@ export const RecipeCard = ({ recipe }: RecipeCardProps) => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDeleteRecipe = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteRecipe(recipe.id);
+      toast({
+        title: "Recipe Deleted",
+        description: `"${recipe.title}" has been deleted successfully`,
+      });
+      // Refresh user recipes
+      refreshUserRecipes();
+      // Call parent onDelete callback if provided
+      if (onDelete) {
+        onDelete();
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete recipe",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -169,33 +210,48 @@ export const RecipeCard = ({ recipe }: RecipeCardProps) => {
         <CardFooter className="p-4 pt-0 flex gap-2">
           <button 
             onClick={handleViewRecipe}
-            className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 py-2 px-3 rounded-lg transition-colors duration-200 font-medium text-sm"
+            className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 py-2 px-3 rounded-lg transition-colors duration-200 font-medium text-sm flex items-center justify-center gap-1"
           >
-            View Recipe
+            <Eye className="w-4 h-4" />
+            View
           </button>
           <button 
             onClick={handleAddToCookList}
-            className="flex-1 bg-green-50 hover:bg-green-100 text-green-700 py-2 px-3 rounded-lg transition-colors duration-200 font-medium flex items-center justify-center gap-1 text-sm"
+            className="p-2 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg transition-colors duration-200 flex items-center justify-center"
+            title="Add to Cook List"
           >
-            <Plus className="w-3 h-3" />
-            Add to Cook List
+            <Plus className="w-4 h-4" />
           </button>
           <button 
             onClick={handleLikeRecipe}
             disabled={isLoading}
-            className={`flex-1 py-2 px-3 rounded-lg transition-colors duration-200 font-medium flex items-center justify-center gap-1 text-sm ${
+            className={`p-2 rounded-lg transition-colors duration-200 flex items-center justify-center ${
               isLiked 
                 ? 'bg-red-50 hover:bg-red-100 text-red-700' 
                 : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
             } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            title={isLiked ? "Unlike Recipe" : "Like Recipe"}
           >
             {isLoading ? (
-              <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             ) : (
-              <Heart className={`w-3 h-3 ${isLiked ? 'fill-current' : ''}`} />
+              <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
             )}
-            Like Recipe
           </button>
+          {showDeleteButton && recipe.isMyRecipe && (
+            <button 
+              onClick={handleDeleteRecipe}
+              disabled={isDeleting}
+              className={`p-2 rounded-lg transition-colors duration-200 flex items-center justify-center bg-red-50 hover:bg-red-100 text-red-700 ${isDeleting ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title="Delete Recipe"
+            >
+              {isDeleting ? (
+                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+            </button>
+          )}
         </CardFooter>
       </Card>
 

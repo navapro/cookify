@@ -62,7 +62,7 @@ const Login = () => {
         <CardHeader className="text-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
           <CardTitle className="text-3xl font-bold">🍳 Cookify</CardTitle>
           <CardDescription className="text-blue-100">
-            "Yes Chef!" meets "Anyone can cook"
+            Spotify but for recipes
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6 space-y-4">

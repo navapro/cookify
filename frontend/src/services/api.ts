@@ -200,6 +200,51 @@ export const getRecipes = async () => {
   return response.json();
 };
 
+// Search recipes with filters
+export const searchRecipes = async (params: {
+  search?: string;
+  duration?: string;
+  cuisines?: string[];
+  myRecipes?: boolean;
+  searchMyIngredients?: boolean;
+  limit?: number;
+  offset?: number;
+}) => {
+  const token = localStorage.getItem("access_token");
+  const queryParams = new URLSearchParams();
+  
+  if (params.search) queryParams.append('search', params.search);
+  if (params.duration) queryParams.append('duration', params.duration);
+  if (params.cuisines) {
+    params.cuisines.forEach(cuisine => queryParams.append('cuisine', cuisine));
+  }
+  if (params.myRecipes) queryParams.append('myRecipes', 'true');
+  if (params.searchMyIngredients) queryParams.append('searchMyIngredients', 'true');
+  if (params.limit) queryParams.append('limit', params.limit.toString());
+  if (params.offset) queryParams.append('offset', params.offset.toString());
+
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+  
+  // Add token if available for myRecipes filter
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/recipes/search?${queryParams}`, {
+    method: "GET",
+    headers,
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to search recipes");
+  }
+
+  return response.json();
+};
+
 // Create a new recipe
 export const createRecipe = async (recipeData) => {
   const token = localStorage.getItem("access_token");
@@ -238,7 +283,10 @@ export const getUserRecipes = async (userId: number): Promise<Recipe[]> => {
     throw new Error(error.error || "Failed to fetch user recipes");
   }
 
-  return response.json();
+  const recipes = await response.json();
+  
+  // The backend already returns the data in the correct format
+  return recipes;
 };
 
 // CookLists
@@ -571,7 +619,7 @@ export const getUserIngredients = async (userId: number): Promise<UserIngredient
   return data.ingredients;
 };
 
-export const addUserIngredient = async (userId: number, ingredientId: number, quantity: string) => {
+export const addUserIngredient = async (userId: number, ingredientData: { name: string; quantity: string; category?: string }) => {
   const token = localStorage.getItem("access_token");
   if (!token) {
     throw new Error("No access token found");
@@ -583,7 +631,7 @@ export const addUserIngredient = async (userId: number, ingredientId: number, qu
       "Content-Type": "application/json",
       "Authorization": `Bearer ${token}`,
     },
-    body: JSON.stringify({ ingredient_id: ingredientId, quantity }),
+    body: JSON.stringify(ingredientData),
   });
 
   return handleApiResponse(response);
@@ -617,6 +665,38 @@ export const removeUserIngredient = async (userId: number, ingredientId: number)
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  return handleApiResponse(response);
+};
+
+export const deleteRecipe = async (recipeId: number): Promise<{ message: string }> => {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/recipes/${recipeId}`, {
+    method: "DELETE",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  return handleApiResponse(response);
+};
+
+export const deleteCookList = async (cookListId: number): Promise<{ message: string }> => {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/cooklists/${cookListId}`, {
+    method: "DELETE",
+    headers: {
       "Authorization": `Bearer ${token}`,
     },
   });

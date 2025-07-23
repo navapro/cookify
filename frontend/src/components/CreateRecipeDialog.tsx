@@ -50,6 +50,12 @@ const durations = [
 
 const difficulties = ["Easy", "Medium", "Hard"];
 
+interface Ingredient {
+  name: string;
+  quantity: string;
+  unit: string;
+}
+
 export const CreateRecipeDialog = ({
   open,
   onOpenChange,
@@ -60,21 +66,23 @@ export const CreateRecipeDialog = ({
   const [difficulty, setDifficulty] = useState("");
   const [duration, setDuration] = useState("");
   const [imageUrl, setImageUrl] = useState("");
-  const [ingredients, setIngredients] = useState<string[]>([""]);
+  const [ingredients, setIngredients] = useState<Ingredient[]>([{ name: "", quantity: "", unit: "" }]);
   const [instructions, setInstructions] = useState<string[]>([""]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   const handleAddIngredient = () => {
-    setIngredients([...ingredients, ""]);
+    setIngredients([...ingredients, { name: "", quantity: "", unit: "" }]);
   };
 
   const handleRemoveIngredient = (index: number) => {
     setIngredients(ingredients.filter((_, i) => i !== index));
   };
 
-  const handleIngredientChange = (index: number, value: string) => {
-    const updated = ingredients.map((ing, i) => (i === index ? value : ing));
+  const handleIngredientChange = (index: number, field: keyof Ingredient, value: string) => {
+    const updated = ingredients.map((ing, i) => 
+      i === index ? { ...ing, [field]: value } : ing
+    );
     setIngredients(updated);
   };
 
@@ -105,7 +113,7 @@ export const CreateRecipeDialog = ({
     setIsSubmitting(true);
 
     // Prepare payload
-    const filteredIngredients = ingredients.filter((ing) => ing.trim() !== "");
+    const filteredIngredients = ingredients.filter((ing) => ing.name.trim() !== "");
     const filteredInstructions = instructions.filter(
       (inst) => inst.trim() !== ""
     );
@@ -116,8 +124,7 @@ export const CreateRecipeDialog = ({
       cuisine,
       duration: parseInt(duration, 10),
       instructions: instructionsText,
-      // If backend supports ingredients on creation, include here; otherwise omit or handle separately
-      // ingredients: filteredIngredients,
+      ingredients: filteredIngredients,
       image_url: imageUrl.trim() || undefined,
       recipe_link: undefined, // or set if you have a field for link
     };
@@ -135,7 +142,7 @@ export const CreateRecipeDialog = ({
       setDifficulty("");
       setDuration("");
       setImageUrl("");
-      setIngredients([""]);
+      setIngredients([{ name: "", quantity: "", unit: "" }]);
       setInstructions([""]);
       onOpenChange(false);
       // Trigger refresh of recipes if callback provided
@@ -277,12 +284,28 @@ export const CreateRecipeDialog = ({
               {ingredients.map((ingredient, index) => (
                 <div key={index} className="flex gap-2">
                   <Input
-                    value={ingredient}
+                    value={ingredient.name}
                     onChange={(e) =>
-                      handleIngredientChange(index, e.target.value)
+                      handleIngredientChange(index, "name", e.target.value)
                     }
-                    placeholder="Enter ingredient..."
-                    className="border-blue-200 focus:border-blue-400"
+                    placeholder="Ingredient name"
+                    className="border-blue-200 focus:border-blue-400 flex-1"
+                  />
+                  <Input
+                    value={ingredient.quantity}
+                    onChange={(e) =>
+                      handleIngredientChange(index, "quantity", e.target.value)
+                    }
+                    placeholder="Quantity"
+                    className="border-blue-200 focus:border-blue-400 w-24"
+                  />
+                  <Input
+                    value={ingredient.unit}
+                    onChange={(e) =>
+                      handleIngredientChange(index, "unit", e.target.value)
+                    }
+                    placeholder="Unit"
+                    className="border-blue-200 focus:border-blue-400 w-24"
                   />
                   {ingredients.length > 1 && (
                     <Button

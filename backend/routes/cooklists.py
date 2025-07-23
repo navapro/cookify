@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from extensions import db
 from sqlalchemy import text
 
@@ -268,3 +269,33 @@ def get_cooklist_recipes_sorted(cooklist_id):
         print(f"Error in get_cooklist_recipes_sorted: {str(e)}")
         print(traceback.format_exc())
         return jsonify({"error": f"Failed to fetch cooklist recipes: {str(e)}"}), 500
+
+@cooklists_bp.route('/<int:cooklist_id>', methods=['DELETE'])
+@jwt_required()
+def delete_cooklist(cooklist_id):
+    try:
+        current_user_id = int(get_jwt_identity())
+        
+        # Check if the cooklist belongs to the current user
+        cooklist_check = db.session.execute(
+            text("SELECT User_ID FROM CookLists WHERE CookList_ID = :cooklist_id"),
+            {"cooklist_id": cooklist_id}
+        ).fetchone()
+        
+        if not cooklist_check:
+            return jsonify({"error": "Cooklist not found"}), 404
+            
+        if cooklist_check[0] != current_user_id:
+            return jsonify({"error": "You can only delete your own cooklists"}), 403
+        
+        # Delete cooklist (cascading deletes will handle CookList_Recipes entries)
+        db.session.execute(
+            text("DELETE FROM CookLists WHERE CookList_ID = :cooklist_id"),
+            {"cooklist_id": cooklist_id}
+        )
+        db.session.commit()
+        
+        return jsonify({"message": "Cooklist deleted successfully"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500

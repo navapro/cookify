@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { createCookList } from "@/services/api";
 import { getUser } from "@/utils/auth";
+import { useCookLists } from "@/contexts/CookListsContext";
 
 interface CreateCooklistDialogProps {
   open: boolean;
@@ -24,6 +25,7 @@ export const CreateCooklistDialog = ({ open, onOpenChange, onCooklistCreated }: 
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const currentUser = getUser();
+  const { refreshUserCookLists } = useCookLists();
 
   const handleCreate = async () => {
     if (cooklistName.trim() && currentUser) {
@@ -35,6 +37,9 @@ export const CreateCooklistDialog = ({ open, onOpenChange, onCooklistCreated }: 
           title: "Cooklist Created Successfully! 📚",
           description: `"${cooklistName}" is ready for your culinary collection!`,
         });
+        
+        // Refresh cooklists to update the list
+        await refreshUserCookLists();
         
         setCooklistName("");
         onOpenChange(false);

@@ -5,12 +5,10 @@ import ast
 import re
 import random
 import sys
-import datetime
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent))
 from config import Config
-from hydrate_db_helpers import *
 
 # ADMIN user constant
 ADMIN_USER_ID = 1
@@ -78,7 +76,6 @@ def main():
 
     cursor = conn.cursor(buffered=True)
     ingredient_cache = {}
-    recipe_ids = []  # Track recipe IDs for later use
 
     # Pre-load existing Ingredients into cache
     try:
@@ -131,7 +128,6 @@ def main():
 
                 
             recipe_id = cursor.lastrowid
-            recipe_ids.append(recipe_id)  # Track recipe IDs for later use
 
             # 3b. Parse Cleaned_Ingredients
             raw = row['Cleaned_Ingredients']
@@ -200,16 +196,6 @@ def main():
             conn.rollback()
             print(f"Error on recipe index {idx}, Title={name}: {e}")
 
-    # Add comprehensive test data for User 2
-    # First, make sure User 2 (TestChef) exists - create it explicitly
-    try:
-        create_dummy_users(cursor, conn, n=0)  # n=0 to only create admin and TestChef
-    except Exception as e:
-        print(f"Warning: Error setting up users: {e}")
-        
-    # Then set up TestChef's test data
-    # setup_user2_test_data(cursor, conn, recipe_ids)
-    
     cursor.close()
     conn.close()
     print("Done.")
@@ -238,13 +224,10 @@ def clean_database():
             "CookList_Recipes",
             "Recipe_Likes",
             "CookList_Likes",
-            "Cooklist_Editors",
+            "User_Activities",
             "CookLists",
             "Ingredients",
-            "Recipe_Likes",
-            "User_Ingredients",
             "Recipes",
-            "User_Levels",
             "Users",
         ]
         for tbl in tables:

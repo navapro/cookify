@@ -15,12 +15,11 @@ def get_user_ingredients(user_id):
     try:
         result = db.session.execute(
             text("""
-                SELECT ui.User_ID, ui.Ingredient_ID, i.Name, ui.Quantity, 
-                       i.Category, i.Season, i.Price, ui.Added_At, ui.Updated_At
+                SELECT ui.User_ID, ui.Ingredient_ID, i.Name, ui.Quantity
                 FROM User_Ingredients ui
                 JOIN Ingredients i ON ui.Ingredient_ID = i.Ingredient_ID
                 WHERE ui.User_ID = :user_id
-                ORDER BY i.Category, i.Name
+                ORDER BY i.Name
             """),
             {"user_id": current_user_id}
         )
@@ -32,63 +31,13 @@ def get_user_ingredients(user_id):
                 "ingredient_id": row[1],
                 "name": row[2],
                 "quantity": row[3],
-                "category": row[4],
-                "season": row[5],
-                "price": float(row[6]) if row[6] else None,
-                "added_at": row[7].isoformat() if row[7] else None,
-                "updated_at": row[8].isoformat() if row[8] else None
+                "category": "",  # Empty default value
+                "season": "",    # Empty default value
+                "price": None    # Null default value
             })
         
         return jsonify({"ingredients": ingredients})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@user_ingredients_bp.route('/<int:user_id>/ingredients', methods=['POST'])
-@jwt_required()
-def add_user_ingredient(user_id):
-    current_user_id = int(get_jwt_identity())
-    if current_user_id != user_id:
-        return jsonify({"error": "Unauthorized access"}), 403
-
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "No input data provided"}), 400
-
-        ingredient_id = data.get('ingredient_id')
-        quantity = data.get('quantity')
-
-        if not ingredient_id or not quantity:
-            return jsonify({"error": "Ingredient ID and quantity are required"}), 400
-
-        # Check if ingredient exists
-        ingredient_check = db.session.execute(
-            text("SELECT Ingredient_ID FROM Ingredients WHERE Ingredient_ID = :id"),
-            {"id": ingredient_id}
-        ).fetchone()
-
-        if not ingredient_check:
-            return jsonify({"error": "Ingredient not found"}), 404
-
-        # Check if user already has this ingredient
-        existing_check = db.session.execute(
-            text("SELECT User_ID FROM User_Ingredients WHERE User_ID = :user_id AND Ingredient_ID = :ingredient_id"),
-            {"user_id": current_user_id, "ingredient_id": ingredient_id}
-        ).fetchone()
-
-        if existing_check:
-            return jsonify({"error": "User already has this ingredient. Use PUT to update quantity."}), 409
-
-        # Add the ingredient to user's pantry
-        db.session.execute(
-            text("INSERT INTO User_Ingredients (User_ID, Ingredient_ID, Quantity) VALUES (:user_id, :ingredient_id, :quantity)"),
-            {"user_id": current_user_id, "ingredient_id": ingredient_id, "quantity": quantity}
-        )
-        db.session.commit()
-
-        return jsonify({"message": "Ingredient added to pantry successfully"}), 201
-    except Exception as e:
-        db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
 @user_ingredients_bp.route('/<int:user_id>/ingredients/<int:ingredient_id>', methods=['PUT'])
@@ -118,7 +67,7 @@ def update_user_ingredient(user_id, ingredient_id):
 
         # Update the quantity
         db.session.execute(
-            text("UPDATE User_Ingredients SET Quantity = :quantity, Updated_At = CURRENT_TIMESTAMP WHERE User_ID = :user_id AND Ingredient_ID = :ingredient_id"),
+            text("UPDATE User_Ingredients SET Quantity = :quantity WHERE User_ID = :user_id AND Ingredient_ID = :ingredient_id"),
             {"user_id": current_user_id, "ingredient_id": ingredient_id, "quantity": quantity}
         )
         db.session.commit()
@@ -206,7 +155,7 @@ def search_user_ingredients(user_id):
 
         query = """
             SELECT ui.User_ID, ui.Ingredient_ID, i.Name, ui.Quantity, 
-                   i.Category, i.Season, i.Price, ui.Added_At, ui.Updated_At
+                   i.Category, i.Season, i.Price
             FROM User_Ingredients ui
             JOIN Ingredients i ON ui.Ingredient_ID = i.Ingredient_ID
             WHERE ui.User_ID = :user_id
@@ -235,8 +184,8 @@ def search_user_ingredients(user_id):
                 "category": row[4],
                 "season": row[5],
                 "price": float(row[6]) if row[6] else None,
-                "added_at": row[7].isoformat() if row[7] else None,
-                "updated_at": row[8].isoformat() if row[8] else None
+                "added_at": None,
+                "updated_at": None
             })
         
         return jsonify({"ingredients": ingredients, "search_term": search_term, "category": category})

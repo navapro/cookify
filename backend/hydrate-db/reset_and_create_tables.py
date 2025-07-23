@@ -86,7 +86,7 @@ def reset_and_create_tables():
             CREATE TABLE IF NOT EXISTS User_Ingredients (
                 User_ID INT NOT NULL,
                 Ingredient_ID INT NOT NULL,
-                Quantity INT NOT NULL,
+                Quantity VARCHAR(100) NOT NULL,
                 PRIMARY KEY (User_ID, Ingredient_ID),
                 FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE,
                 FOREIGN KEY (Ingredient_ID) REFERENCES Ingredients(Ingredient_ID) ON DELETE CASCADE
@@ -98,7 +98,7 @@ def reset_and_create_tables():
             CREATE TABLE IF NOT EXISTS Recipe_Ingredients (
                 Recipe_ID INT,
                 Ingredient_ID INT,
-                Quantity INT NOT NULL,
+                Quantity VARCHAR(100),
                 Unit VARCHAR(255),
                 PRIMARY KEY (Recipe_ID, Ingredient_ID),
                 FOREIGN KEY (Recipe_ID) REFERENCES Recipes(Recipe_ID),
@@ -304,9 +304,6 @@ def reset_and_create_tables():
         cursor.execute("DROP TRIGGER IF EXISTS CreateLikedRecipes;")
         cursor.execute("DROP TRIGGER IF EXISTS UniqueLikedCooklist;")
         cursor.execute("DROP TRIGGER IF EXISTS AddToLikedRecipes;")
-
-        # for advanced feature 1
-        cursor.execute("DROP VIEW IF EXISTS My_Ingredients;")
 
         # trigger for automatically generating 'Liked Recipes' cooklist
         cursor.execute("""delimiter //

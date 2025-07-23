@@ -187,23 +187,14 @@ SELECT * FROM Recipes r WHERE EXISTS (SELECT Recipe_ID FROM Cooklist_Recipes WHE
 -- INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (6, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
 
 -- advanced feature 1: 
+-- inserting extra ingredients so that user 2 has enough to make recipe 1
+INSERT INTO User_Ingredients (User_ID, Ingredient_ID, Quantity) VALUES (2, 2, 2);
+
 -- creating view (if you're user 2)
 CREATE VIEW My_Ingredients AS
 SELECT i.Ingredient_ID, i.Name, ui.Quantity
 FROM Ingredients i, User_Ingredients ui
 WHERE ui.User_ID = 2 AND i.Ingredient_ID = ui.Ingredient_ID;
-
--- checking your ingredients
-SELECT * FROM My_Ingredients;
-
--- inserting some recipes and their ingredients
-INSERT INTO Recipes (Recipe_ID, User_ID, Name, Duration, Difficulty, Cuisine, Instructions, Servings, Image_URL) VALUES
-(314, 1, 'you can make this', 120, 'Medium', 'Italian', 'cook good. good cook.', 1, 'very real link'),
-(159, 1, 'you cannot make this', 120, 'Medium', 'Italian', 'cook good. good cook.', 1, 'very real link');
-
-INSERT INTO Recipe_Ingredients (Recipe_ID, Ingredient_ID, Quantity, Unit) VALUES
-(314, 1, 1, 'piece'),
-(159, 1, 101, 'pieces');
 
 -- query for all recipes you can make
 SELECT has.Recipe_ID

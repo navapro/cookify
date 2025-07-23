@@ -193,7 +193,7 @@ def reset_and_create_tables():
             ('Street Rat', 0, 'rat'),
             ('Dishwasher', 10, 'dishwasher'),
             ('Prep Cook', 25, 'prepcook'),
-            ('Chef', 100, 'chef'),
+            ('Chef', 50, 'chef'),
             ('Sous Chef', 250, 'souschef'),
             ('Head Chef', 500, 'headchef'),
             ('Michelin Star Chef', 1000, 'starchef'),

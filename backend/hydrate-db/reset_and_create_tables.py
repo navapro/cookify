@@ -420,69 +420,41 @@ def reset_and_create_tables():
                         AFTER INSERT ON Users
                         FOR EACH ROW
                             BEGIN
-                            IF ((SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') = 0) THEN
-                                INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (NEW.User_ID, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
+                            IF ((SELECT COUNT(*) FROM CookLists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') = 0) THEN
+                                INSERT INTO CookLists (User_ID, Name, Description, Is_Public) VALUES (NEW.User_ID, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
                             END IF;
                             END; //""")
         
         # trigger for rejecting when a user attempts to create a 'Liked Recipes' cooklist on their own
         cursor.execute("""delimiter //
                         CREATE TRIGGER UniqueLikedCooklist
-                        BEFORE INSERT ON Cooklists
+                        BEFORE INSERT ON CookLists
                         FOR EACH ROW
                             BEGIN
-                                IF (NEW.Name = 'Liked Recipes' AND (SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') > 0) THEN
+                                IF (NEW.Name = 'Liked Recipes' AND (SELECT COUNT(*) FROM CookLists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') > 0) THEN
                                     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Only one Liked Recipes cooklist can exist!';
                                 END IF;
                             END; //""")
 
         # creating trigger for automatically adding liked recipes to Liked Recipes
-        # cursor.execute("""delimiter //
-        #                 CREATE TRIGGER AddToLikedRecipes
-        #                 AFTER INSERT ON Recipe_Likes
-        #                 FOR EACH ROW
-        #                     BEGIN
-        #                         IF ((SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') = 0) THEN
-        #                             INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (NEW.User_ID, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
-        #                         END IF;
-        #                         INSERT INTO Cooklist_Recipes (CookList_ID, Recipe_ID, Added_At, Added_By)
-        #                         VALUES (
-        #                             (SELECT Cooklist_ID FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes'),
-        #                             NEW.Recipe_ID,
-        #                             NEW.Liked_At,
-        #                             NEW.User_ID
-        #                         );
-        #                     END; //""")
-        
         # creating trigger for automatically adding liked recipes to Liked Recipes and also give owner edit access to it
+        # HELP I DON KNOW HOW TO DO THE GIVE OWNER EDIT ACCESS PART
         cursor.execute("""delimiter //
-                CREATE TRIGGER AddToLikedRecipes
-                AFTER INSERT ON Recipe_Likes
-                FOR EACH ROW
-                    BEGIN
-                        DECLARE cooklist_id INT;
-                        
-                        -- Create Liked Recipes cooklist if it doesn't exist
-                        IF ((SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') = 0) THEN
-                            INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) 
-                            VALUES (NEW.User_ID, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
-                        END IF;
-                        
-                        -- Get the cooklist ID
-                        SELECT CookList_ID INTO cooklist_id
-                        FROM Cooklists 
-                        WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes';
-                        
-                        -- Ensure user is an editor of their Liked Recipes cooklist
-                        IF NOT EXISTS (SELECT 1 FROM Cooklist_Editors WHERE CookList_ID = cooklist_id AND User_ID = NEW.User_ID) THEN
-                            INSERT INTO Cooklist_Editors (CookList_ID, User_ID)
-                            VALUES (cooklist_id, NEW.User_ID);
-                        END IF;
-                        
-                        -- Add the recipe to the cooklist
-                        INSERT INTO Cooklist_Recipes (CookList_ID, Recipe_ID, Added_At, Added_By)
-                        VALUES (cooklist_id, NEW.Recipe_ID, NEW.Liked_At, NEW.User_ID);
-                    END; //""")
+                        CREATE TRIGGER AddToLikedRecipes
+                        AFTER INSERT ON Recipe_Likes
+                        FOR EACH ROW
+                            BEGIN
+                                IF ((SELECT COUNT(*) FROM CookLists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') = 0) THEN
+                                    INSERT INTO CookLists (User_ID, Name, Description, Is_Public) VALUES (NEW.User_ID, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
+                                END IF;
+                                INSERT INTO Cooklist_Recipes (CookList_ID, Recipe_ID, Added_At, Added_By)
+                                VALUES (
+                                    (SELECT CookList_ID FROM CookLists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes'),
+                                    NEW.Recipe_ID,
+                                    CURRENT_TIMESTAMP,
+                                    NEW.User_ID
+                                );
+                            END; //""")
 
         connection.commit()
         print("Database reset and tables recreated successfully!")

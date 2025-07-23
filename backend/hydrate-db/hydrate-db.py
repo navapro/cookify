@@ -180,7 +180,56 @@ def main():
                 # 3b.ii. Insert into Recipe_Ingredients with defaults
                 qty_val  = qty  if qty  is not None else '1'
                 unit_val = unit if unit is not None else 'count'
+                
+                # Convert fractional quantities to decimal numbers
                 try:
+                    # Handle common fraction characters
+                    if qty_val == '¼' or qty_val == '1/4':
+                        qty_val = 0.25
+                    elif qty_val == '½' or qty_val == '1/2':
+                        qty_val = 0.5
+                    elif qty_val == '¾' or qty_val == '3/4':
+                        qty_val = 0.75
+                    elif qty_val == '⅓' or qty_val == '1/3':
+                        qty_val = 0.33
+                    elif qty_val == '⅔' or qty_val == '2/3':
+                        qty_val = 0.67
+                    # Handle other fractions with slash notation (e.g. "1/2")
+                    elif isinstance(qty_val, str) and '/' in qty_val:
+                        parts = qty_val.split('/')
+                        if len(parts) == 2:
+                            try:
+                                numerator = float(parts[0])
+                                denominator = float(parts[1])
+                                if denominator != 0:
+                                    qty_val = numerator / denominator
+                                else:
+                                    qty_val = 1
+                            except (ValueError, TypeError):
+                                qty_val = 1
+                    
+                    # Handle ranges (e.g. "1-2" or "1–2")
+                    elif isinstance(qty_val, str) and ('-' in qty_val or '–' in qty_val):
+                        delimiter = '-' if '-' in qty_val else '–'
+                        parts = qty_val.split(delimiter)
+                        if len(parts) == 2:
+                            try:
+                                # Use the average of the range
+                                start = float(parts[0])
+                                end = float(parts[1])
+                                qty_val = (start + end) / 2
+                            except (ValueError, TypeError):
+                                qty_val = 1
+                    
+                    # Final conversion to float/int
+                    if isinstance(qty_val, str):
+                        try:
+                            # Convert to float first, then to int if it's a whole number
+                            float_val = float(qty_val)
+                            qty_val = int(float_val) if float_val.is_integer() else float_val
+                        except (ValueError, TypeError):
+                            qty_val = 1
+                    
                     cursor.execute(
                         """
                         INSERT INTO Recipe_Ingredients

@@ -256,19 +256,100 @@ def create_dummy_recipe_likes(cursor, conn, user_ids, recipe_ids, like_probabili
     """
     For each user–recipe pair, like with probability `like_probability`.
     """
+    success_count = 0
+    error_count = 0
+    
+    # First make sure each user has a Liked Recipes cooklist
+    print("Setting up Liked Recipes cooklists...")
+    cooklist_map = {}  # Store user_id -> cooklist_id mapping
+    
     for u in user_ids:
+        try:
+            # Create Liked Recipes cooklist if it doesn't exist
+            cursor.execute(
+                "SELECT COUNT(*) FROM CookLists WHERE User_ID = %s AND Name = 'Liked Recipes'",
+                (u,)
+            )
+            count = cursor.fetchone()[0]
+            
+            if count == 0:
+                cursor.execute(
+                    "INSERT INTO CookLists (User_ID, Name, Description, Is_Public) VALUES (%s, %s, %s, %s)",
+                    (u, 'Liked Recipes', 'All your liked recipes in one place!', True)
+                )
+                conn.commit()
+                
+            # Get the cooklist ID
+            cursor.execute(
+                "SELECT CookList_ID FROM CookLists WHERE User_ID = %s AND Name = 'Liked Recipes'",
+                (u,)
+            )
+            result = cursor.fetchone()
+            
+            if result:
+                cooklist_id = result[0]
+                cooklist_map[u] = cooklist_id
+                
+                # Make sure user is an editor
+                cursor.execute(
+                    "SELECT COUNT(*) FROM Cooklist_Editors WHERE CookList_ID = %s AND User_ID = %s",
+                    (cooklist_id, u)
+                )
+                if cursor.fetchone()[0] == 0:
+                    cursor.execute(
+                        "INSERT INTO Cooklist_Editors (CookList_ID, User_ID) VALUES (%s, %s)",
+                        (cooklist_id, u)
+                    )
+                    conn.commit()
+            else:
+                print(f"Warning: Failed to find 'Liked Recipes' cooklist for user {u}")
+        except Exception as e:
+            print(f"Error creating Liked Recipes cooklist for user {u}: {e}")
+            conn.rollback()
+    
+    # Add likes for each user
+    print("Adding recipe likes...")
+    for u in user_ids:
+        # Get the user's Liked Recipes cooklist ID
+        cooklist_id = cooklist_map.get(u)
+        
+        # Skip if no cooklist found
+        if not cooklist_id:
+            continue
+        
+        # For each recipe they might like
         for r in recipe_ids:
             if random.random() < like_probability:
                 try:
+                    # Skip if already liked
+                    cursor.execute(
+                        "SELECT COUNT(*) FROM Recipe_Likes WHERE User_ID = %s AND Recipe_ID = %s",
+                        (u, r)
+                    )
+                    if cursor.fetchone()[0] > 0:
+                        continue
+                    
+                    # Insert the like directly
                     cursor.execute(
                         "INSERT INTO Recipe_Likes (User_ID, Recipe_ID) VALUES (%s, %s)",
                         (u, r)
                     )
-                except IntegrityError:
-                    pass
-    conn.commit()
-    print("Populated Recipe_Likes.")
-
+                    
+                    # Manually insert into cooklist recipes
+                    cursor.execute(
+                        "INSERT IGNORE INTO CookList_Recipes (CookList_ID, Recipe_ID, Added_At, Added_By) VALUES (%s, %s, CURRENT_TIMESTAMP, %s)",
+                        (cooklist_id, r, u)
+                    )
+                    
+                    conn.commit()
+                    success_count += 1
+                    
+                except Exception as e:
+                    error_count += 1
+                    print(f"Error adding like for user {u}, recipe {r}: {str(e)}")
+                    conn.rollback()
+    
+    print(f"Populated Recipe_Likes. Success: {success_count}, Errors: {error_count}")
 
 def create_dummy_cooklist_likes(cursor, conn, user_ids, cooklist_ids, like_probability=0.1):
     """
@@ -291,158 +372,3 @@ def create_dummy_cooklist_likes(cursor, conn, user_ids, cooklist_ids, like_proba
                     pass
     conn.commit()
     print("Populated CookList_Likes.")
-
-# def setup_user2_test_data(cursor, conn, recipe_ids):
-#     """
-#     Create comprehensive test data for User 2 (TestChef)
-#     This function assumes User 2 already exists (created by create_dummy_users)
-#     """
-#     print("Setting up User 2 (TestChef) with comprehensive test data...")
-#     USER_ID = 2
-    
-#     # User 2 already created in create_dummy_users, so we skip that step
-#     try:
-#         # Check if "Liked Recipes" cooklist exists
-#         cursor.execute("""
-#             SELECT CookList_ID FROM CookLists 
-#             WHERE User_ID = %s AND Name = 'Liked Recipes'
-#         """, (USER_ID,))
-        
-#         liked_list = cursor.fetchone()
-#         if not liked_list:
-#             # Create the Liked Recipes cooklist if it doesn't exist
-#             cursor.execute("""
-#                 INSERT INTO CookLists (User_ID, Name, Description, Is_Public)
-#                 VALUES (%s, %s, %s, %s)
-#             """, (USER_ID, "Liked Recipes", "All your liked recipes in one place!", True))
-#             conn.commit()
-            
-#             # Get the cooklist ID
-#             cursor.execute("""
-#                 SELECT CookList_ID FROM CookLists 
-#                 WHERE User_ID = %s AND Name = 'Liked Recipes'
-#             """, (USER_ID,))
-#             liked_list = cursor.fetchone()
-        
-#         # Add User 2 as an editor of their own Liked Recipes cooklist
-#         if liked_list:
-#             cursor.execute("""
-#                 INSERT IGNORE INTO Cooklist_Editors (CookList_ID, User_ID)
-#                 VALUES (%s, %s)
-#             """, (liked_list[0], USER_ID))
-#             conn.commit()
-#             print(f"Ensured User 2 has a 'Liked Recipes' cooklist with ID {liked_list[0]}")
-#     except Exception as e:
-#         print(f"Error setting up Liked Recipes cooklist for User 2: {e}")
-#         conn.rollback()
-    
-#     # 2. Create specific ingredients for User 2
-#     ingredients = [
-#         (1, "Chicken", 500),
-#         (2, "Onion", 5),
-#         (3, "Garlic", 10),
-#         (4, "Rice", 1000),
-#         (5, "Tomato", 8),
-#         (10, "Olive Oil", 250),
-#         (15, "Salt", 100),
-#         (20, "Pepper", 50)
-#     ]
-    
-#     for ing_id, ing_name, quantity in ingredients:
-#         try:
-#             # Make sure ingredient exists
-#             cursor.execute("""
-#                 INSERT INTO Ingredients (Ingredient_ID, Name) 
-#                 VALUES (%s, %s)
-#                 ON DUPLICATE KEY UPDATE Name = VALUES(Name)
-#             """, (ing_id, ing_name))
-            
-#             # Add to user's ingredients
-#             cursor.execute("""
-#                 INSERT INTO User_Ingredients (User_ID, Ingredient_ID, Quantity)
-#                 VALUES (%s, %s, %s)
-#                 ON DUPLICATE KEY UPDATE Quantity = VALUES(Quantity)
-#             """, (USER_ID, ing_id, quantity))
-#         except Exception as e:
-#             print(f"Error adding ingredient {ing_name} to User 2: {e}")
-#             conn.rollback()
-#     conn.commit()
-#     print("Added specific ingredients to User 2")
-    
-#     # 3. Create specific cooklists for User 2
-#     cooklists = [
-#         ("Weekly Menu", "My meal plan for this week", True),
-#         ("Special Occasions", "Recipes for birthdays and holidays", True),
-#         ("Quick Meals", "When I need something fast", False)
-#     ]
-    
-#     cooklist_ids = []
-#     for name, desc, is_public in cooklists:
-#         try:
-#             cursor.execute("""
-#                 INSERT INTO CookLists (User_ID, Name, Description, Is_Public)
-#                 VALUES (%s, %s, %s, %s)
-#             """, (USER_ID, name, desc, is_public))
-#             conn.commit()
-#             cooklist_ids.append(cursor.lastrowid)
-#         except Exception as e:
-#             print(f"Error creating cooklist {name} for User 2: {e}")
-#             conn.rollback()
-#     print(f"Created {len(cooklist_ids)} specific cooklists for User 2")
-    
-#     # 4. Add specific recipes to User 2's cooklists
-#     if len(recipe_ids) >= 10:
-#         # Add specific recipes to each cooklist
-#         recipe_assignments = [
-#             (cooklist_ids[0], recipe_ids[:5]),  # First 5 recipes to Weekly Menu
-#             (cooklist_ids[1], recipe_ids[5:8]), # 3 recipes to Special Occasions
-#             (cooklist_ids[2], recipe_ids[8:10]) # 2 recipes to Quick Meals
-#         ]
-        
-#         for cl_id, recipes in recipe_assignments:
-#             for i, r_id in enumerate(recipes):
-#                 # Spread the added_at dates over the last 30 days
-#                 days_ago = i * 3  # 0, 3, 6, 9, 12 days ago
-#                 added_at = datetime.datetime.now() - datetime.timedelta(days=days_ago)
-#                 try:
-#                     cursor.execute("""
-#                         INSERT INTO CookList_Recipes (CookList_ID, Recipe_ID, Added_At, Added_By)
-#                         VALUES (%s, %s, %s, %s)
-#                     """, (cl_id, r_id, added_at, USER_ID))
-#                 except Exception as e:
-#                     print(f"Error adding recipe {r_id} to cooklist {cl_id} for User 2: {e}")
-#                     conn.rollback()
-#         conn.commit()
-#         print("Added specific recipes to User 2's cooklists")
-    
-#     # 5. Like specific recipes
-#     if len(recipe_ids) >= 15:
-#         likes = recipe_ids[10:15]  # Like 5 different recipes
-#         for r_id in likes:
-#             try:
-#                 cursor.execute("""
-#                     INSERT INTO Recipe_Likes (User_ID, Recipe_ID)
-#                     VALUES (%s, %s)
-#                 """, (USER_ID, r_id))
-#             except Exception as e:
-#                 print(f"Error adding recipe like for User 2: {e}")
-#                 conn.rollback()
-#         conn.commit()
-#         print("Added specific recipe likes for User 2")
-    
-#     # 6. Set up cooklist sharing permissions
-#     if len(cooklist_ids) > 0:
-#         # Share the "Weekly Menu" cooklist with users 3 and 4 if they exist
-#         for shared_user in [3, 4]:
-#             try:
-#                 cursor.execute("""
-#                     INSERT IGNORE INTO Cooklist_Editors (CookList_ID, User_ID)
-#                     VALUES (%s, %s)
-#                 """, (cooklist_ids[0], shared_user))
-#             except Exception as e:
-#                 print(f"Error setting up sharing for User 2's cooklist: {e}")
-#                 conn.rollback()
-#         conn.commit()
-#         print("Set up cooklist sharing permissions for User 2")
-    
-#     print("User 2 test data setup complete!")

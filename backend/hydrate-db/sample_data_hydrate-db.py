@@ -114,16 +114,31 @@ def create_dummy_recipes(cursor, conn, admin_id, num_recipes=20):
             unit_val = unit if unit else "count"
             qty_val = qty if qty else '1'
 
+            # try:
+            #     cursor.execute(
+            #         "INSERT INTO Recipe_Ingredients (Recipe_ID, Ingredient_ID, Quantity, Unit)"
+            #         " VALUES (%s, %s, %s, %s)",
+            #         (rid,
+            #          get_or_create_ingredient(cursor, conn, name),
+            #          qty_val,
+            #          unit_val)
+            #     )
+            # except IntegrityError:
+            #     pass
             try:
+                # Convert qty_val to an integer before inserting
+                qty_int = int(float(qty_val)) if qty_val else 1
+                
                 cursor.execute(
                     "INSERT INTO Recipe_Ingredients (Recipe_ID, Ingredient_ID, Quantity, Unit)"
                     " VALUES (%s, %s, %s, %s)",
                     (rid,
-                     get_or_create_ingredient(cursor, conn, name),
-                     qty_val,
-                     unit_val)
+                    get_or_create_ingredient(cursor, conn, name),
+                    qty_int,  # Use integer value instead of string
+                    unit_val)
                 )
-            except IntegrityError:
+            except (IntegrityError, ValueError) as e:
+                print(f"Warning: Could not add ingredient '{name}' to recipe {rid}: {e}")
                 pass
         conn.commit()
 

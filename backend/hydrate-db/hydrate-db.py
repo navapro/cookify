@@ -41,25 +41,94 @@ COMMON_UNITS = {
     'pinch','pinches','quart','quarts','liter','liters','ml','milliliter','milliliters'
 }
 
+def parse_quantity(qty_str):
+    """Parse a quantity string that might include units like '200g' and extract just the number.
+    Also handles special fraction characters like ¼, ½, ¾."""
+    if not qty_str:
+        return 1
+    
+    # Convert common fraction characters to their decimal equivalents
+    fraction_map = {
+        '¼': 0.25,
+        '½': 0.5,
+        '¾': 0.75,
+        '⅓': 0.33,
+        '⅔': 0.67,
+        '⅛': 0.125,
+        '⅜': 0.375,
+        '⅝': 0.625,
+        '⅞': 0.875
+    }
+    
+    qty_str = str(qty_str).strip()
+    
+    # Check if the quantity is a special fraction character
+    if qty_str in fraction_map:
+        return fraction_map[qty_str]
+    
+    # Handle mixed numbers like "1¼" (1.25)
+    import re
+    mixed_number = re.match(r'^(\d+)([¼½¾⅓⅔⅛⅜⅝⅞])$', qty_str)
+    if mixed_number:
+        whole = int(mixed_number.group(1))
+        fraction = fraction_map.get(mixed_number.group(2), 0)
+        return int(whole + fraction)
+        
+    # Extract just the numeric part from strings like '200g', '1.5kg', etc.
+    numeric_part = re.match(r'^([\d.]+)', qty_str)
+    if numeric_part:
+        try:
+            return int(float(numeric_part.group(1)))
+        except (ValueError, TypeError):
+            pass
+            
+    return 1  # Default to 1 if parsing fails
+
 def parse_ingredient(ing_str: str):
     s = ing_str.strip()
     if not s:
         return None, None, ''
+    
     parts = s.split(None, 1)
     if len(parts) == 1:
         return None, None, s
+        
     qty_candidate, rest = parts
+    
+    # Use the parse_quantity function to convert fractions
+    qty_value = parse_quantity(qty_candidate)
+    
     if re.search(r'[\d¼½¾⅓⅔–/]', qty_candidate):
         subparts = rest.split(None, 1)
         token = subparts[0].lower().rstrip('.,')
         if token in COMMON_UNITS:
             unit = token
             name = subparts[1].strip() if len(subparts) > 1 else ''
-            return qty_candidate, unit, name
+            return qty_value, unit, name  # Return the parsed number
         else:
-            return qty_candidate, None, rest.strip()
+            return qty_value, None, rest.strip()  # Return the parsed number
     else:
         return None, None, s
+
+# def parse_ingredient(ing_str: str):
+#     s = ing_str.strip()
+#     if not s:
+#         return None, None, ''
+#     parts = s.split(None, 1)
+#     if len(parts) == 1:
+#         return None, None, s
+#     qty_candidate, rest = parts
+#     if re.search(r'[\d¼½¾⅓⅔–/]', qty_candidate):
+#         subparts = rest.split(None, 1)
+#         token = subparts[0].lower().rstrip('.,')
+#         if token in COMMON_UNITS:
+#             unit = token
+#             name = subparts[1].strip() if len(subparts) > 1 else ''
+#             return qty_candidate, unit, name
+#         else:
+#             return qty_candidate, None, rest.strip()
+#     else:
+#         return None, None, s
 
 def main():
     # 1. Connect to MySQL

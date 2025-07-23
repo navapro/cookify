@@ -20,7 +20,7 @@ def reset_and_create_tables():
     }
 
     tables = [
-        "CookList",
+        "CookLists",
         "CookList_Likes",
         "CookList_Recipes",
         "Ingredients",
@@ -29,6 +29,7 @@ def reset_and_create_tables():
         "Recipe_Likes",
         "Recipes",
         "Users",
+        "User_Levels",
     ]
 
     connection = None
@@ -52,7 +53,7 @@ def reset_and_create_tables():
                 Password VARCHAR(255) NOT NULL,
                 Date_of_Birth DATE,
                 Profile_Image TEXT,
-                Cookify_Level INT DEFAULT 0,
+                Cookify_Level VARCHAR(50) DEFAULT 'Street Rat',
                 Points INT DEFAULT 0
             )
         """)
@@ -154,18 +155,25 @@ def reset_and_create_tables():
                 FOREIGN KEY (CookList_ID) REFERENCES CookLists(CookList_ID)
             )
         """)
+      
+        # advanced feature 2 + 3: drop triggers beforehand
+        cursor.execute("DROP TRIGGER IF EXISTS After_Cooklist_Like;")
+        cursor.execute("DROP TRIGGER IF EXISTS After_Recipe_Like;")
+        # cursor.execute("DROP TRIGGER IF EXISTS Points_Update;")
 
-        # Cooklist_Editors (user can edit cooklist)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS Cooklist_Editors (
-                CookList_ID INT NOT NULL,
-                User_ID INT NOT NULL,
-                Granted_At DATETIME DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (CookList_ID, User_ID),
-                FOREIGN KEY (CookList_ID) REFERENCES CookLists(CookList_ID) ON DELETE CASCADE,
-                FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE
-            )
-        """)
+        # ADVANCED FEATURE #3
+        # NOTE: IF MYSQL SUPPORTED ASSERTIONS, WE WOULD IMPLEMENT FEATURE 3 WITH AN ASSERTION LIKE THIS:
+        # CREATE ASSERTION CheckCooklistEditors
+        # CHECK (
+        # NOT EXISTS (
+        #     SELECT * FROM CookList_Recipes cr
+        #     WHERE NOT EXISTS (
+        #       SELECT * FROM Cooklist_Editors ce
+        #       WHERE ce.CookList_ID = cr.CookList_ID
+        #       AND ce.User_ID = cr.Added_By
+        #     )
+        # )
+        # );
 
         # TRIGGERS
         # Advanced feature 2: trigger for levelling up
@@ -192,19 +200,6 @@ def reset_and_create_tables():
             ('Remy the Rat', 10000, 'remy')
         """)
 
-        # Trigger for when a user creates a cooklist
-        cursor.execute("""
-            CREATE TRIGGER After_Cooklist_Create
-            AFTER INSERT ON CookLists
-            FOR EACH ROW
-            BEGIN
-                -- Award 1 point to the user who created the cooklist
-                UPDATE Users 
-                SET Points = Points + 1 
-                WHERE User_ID = NEW.User_ID;
-            END
-        """)
-
         # Trigger for when a user likes a cooklist
         cursor.execute("""
             CREATE TRIGGER After_Cooklist_Like
@@ -212,16 +207,34 @@ def reset_and_create_tables():
             FOR EACH ROW
             BEGIN
                 DECLARE cooklist_owner INT;
+                DECLARE new_level VARCHAR(50);
+                DECLARE new_image_path VARCHAR(1024);
+                DECLARE updated_points INT;
                 
-                -- Find the cooklist owner
-                SELECT User_ID INTO cooklist_owner 
-                FROM CookLists 
-                WHERE CookList_ID = NEW.CookList_ID;
-                
-                -- Award 1 point to the cooklist owner
-                UPDATE Users 
-                SET Points = Points + 1 
-                WHERE User_ID = cooklist_owner;
+                IF @TRIGGER_DISABLED IS NULL THEN
+                    -- Find the cooklist owner
+                    SELECT User_ID INTO cooklist_owner
+                    FROM CookLists 
+                    WHERE CookList_ID = NEW.CookList_ID;
+                    
+                    -- Calculate new points
+                    SET updated_points = (SELECT Points + 1 FROM Users WHERE User_ID = cooklist_owner);
+                    
+                    -- Find appropriate level for new points
+                    SELECT Level_Name, Image_Path 
+                    INTO new_level, new_image_path
+                    FROM User_Levels
+                    WHERE Min_Points <= updated_points
+                    ORDER BY Min_Points DESC
+                    LIMIT 1;
+                    
+                    -- Update both points and level at once
+                    UPDATE Users 
+                    SET Points = updated_points,
+                        Cookify_Level = new_level,
+                        Profile_Image = new_image_path
+                    WHERE User_ID = cooklist_owner;
+                END IF;
             END
         """)
 
@@ -232,48 +245,37 @@ def reset_and_create_tables():
             FOR EACH ROW
             BEGIN
                 DECLARE recipe_owner INT;
+                DECLARE new_level VARCHAR(50);
+                DECLARE new_image_path VARCHAR(1024);
+                DECLARE updated_points INT;
                 
-                -- Find the recipe owner
-                SELECT User_ID INTO recipe_owner 
-                FROM Recipes 
-                WHERE Recipe_ID = NEW.Recipe_ID;
-                
-                -- Award 1 point to the recipe owner
-                UPDATE Users 
-                SET Points = Points + 1 
-                WHERE User_ID = recipe_owner;
-            END
-        """)
-
-        # Trigger for when a user's points increase to check for level up
-        cursor.execute("""
-            CREATE TRIGGER Points_Update
-            AFTER UPDATE ON Users
-            FOR EACH ROW
-            BEGIN
-                IF NEW.Points > OLD.Points THEN
-                    -- Find the highest level the user qualifies for
-                    DECLARE new_level VARCHAR(50);
-                    DECLARE new_image_path VARCHAR(1024);
+                IF @TRIGGER_DISABLED IS NULL THEN
+                    -- Find the recipe owner
+                    SELECT User_ID INTO recipe_owner 
+                    FROM Recipes 
+                    WHERE Recipe_ID = NEW.Recipe_ID;
                     
+                    -- Calculate new points
+                    SET updated_points = (SELECT Points + 1 FROM Users WHERE User_ID = recipe_owner);
+                    
+                    -- Find appropriate level for new points
                     SELECT Level_Name, Image_Path 
                     INTO new_level, new_image_path
                     FROM User_Levels
-                    WHERE Min_Points <= NEW.Points
+                    WHERE Min_Points <= updated_points
                     ORDER BY Min_Points DESC
                     LIMIT 1;
                     
-                    -- Update the user's level and profile image if they've reached a new level
-                    IF (NEW.Cookify_Level != new_level) THEN
-                        UPDATE Users 
-                        SET Cookify_Level = new_level,
-                            Profile_Image = new_image_path
-                        WHERE User_ID = NEW.User_ID;
-                    END IF;
+                    -- Update both points and level at once
+                    UPDATE Users 
+                    SET Points = updated_points,
+                        Cookify_Level = new_level,
+                        Profile_Image = new_image_path
+                    WHERE User_ID = recipe_owner;
                 END IF;
             END
         """)
-
+        
         # ──────────────── Indexes ────────────────
         # speed up ingredient name lookups
         cursor.execute("CREATE INDEX idx_ingredients_name ON Ingredients (Name);")
@@ -337,7 +339,12 @@ def reset_and_create_tables():
                                 IF ((SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') = 0) THEN
                                     INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (NEW.User_ID, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
                                 END IF;
-                                INSERT INTO Cooklist_Recipes VALUES ((SELECT Cooklist_ID FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes'), NEW.Recipe_ID, NEW.Liked_At);
+                                INSERT INTO Cooklist_Recipes (CookList_ID, Recipe_ID, Added_At)
+                                VALUES (
+                                    (SELECT Cooklist_ID FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes'),
+                                    NEW.Recipe_ID,
+                                    NEW.Liked_At
+                                );
                             END; //""")
 
         connection.commit()

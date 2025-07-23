@@ -113,19 +113,80 @@ def create_dummy_recipes(cursor, conn, admin_id, num_recipes=20):
             qty_val = qty if qty else '1'
 
             try:
+                # Convert qty_val to integer before inserting
+                numeric_qty = parse_quantity(qty_val)
+                
                 cursor.execute(
                     "INSERT INTO Recipe_Ingredients (Recipe_ID, Ingredient_ID, Quantity, Unit)"
                     " VALUES (%s, %s, %s, %s)",
                     (rid,
                      get_or_create_ingredient(cursor, conn, name),
-                     qty_val,
+                     numeric_qty,  # Use the parsed numeric value instead of qty_val directly
                      unit_val)
                 )
-            except IntegrityError:
-                pass
+            except Exception as e:
+                print(f"Warning: Could not add ingredient '{name}' to recipe {rid}, qty='{qty_val}': {e}")
+                # Try again with default quantity of 1 as fallback
+                try:
+                    cursor.execute(
+                        "INSERT INTO Recipe_Ingredients (Recipe_ID, Ingredient_ID, Quantity, Unit)"
+                        " VALUES (%s, %s, %s, %s)",
+                        (rid,
+                         get_or_create_ingredient(cursor, conn, name),
+                         1,  # Default to 1 as fallback
+                         unit_val)
+                    )
+                    print(f"  - Fallback succeeded: Used quantity=1 for ingredient '{name}'")
+                except Exception as e2:
+                    print(f"  - Fallback failed: {e2}")
+                    pass
         conn.commit()
 
     return recipe_ids
+
+
+def parse_quantity(qty_str):
+    """Parse a quantity string that might include units like '200g' and extract just the number.
+    Also handles special fraction characters like ¼, ½, ¾."""
+    if not qty_str:
+        return 1
+    
+    # Convert common fraction characters to their decimal equivalents
+    fraction_map = {
+        '¼': 0.25,
+        '½': 0.5,
+        '¾': 0.75,
+        '⅓': 0.33,
+        '⅔': 0.67,
+        '⅛': 0.125,
+        '⅜': 0.375,
+        '⅝': 0.625,
+        '⅞': 0.875
+    }
+    
+    qty_str = str(qty_str).strip()
+    
+    # Check if the quantity is a special fraction character
+    if qty_str in fraction_map:
+        return fraction_map[qty_str]
+    
+    # Handle mixed numbers like "1¼" (1.25)
+    import re
+    mixed_number = re.match(r'^(\d+)([¼½¾⅓⅔⅛⅜⅝⅞])$', qty_str)
+    if mixed_number:
+        whole = int(mixed_number.group(1))
+        fraction = fraction_map.get(mixed_number.group(2), 0)
+        return int(whole + fraction)
+        
+    # Extract just the numeric part from strings like '200g', '1.5kg', etc.
+    numeric_part = re.match(r'^([\d.]+)', qty_str)
+    if numeric_part:
+        try:
+            return int(float(numeric_part.group(1)))
+        except (ValueError, TypeError):
+            pass
+            
+    return 1  # Default to 1 if parsing fails
 
 
 def get_or_create_ingredient(cursor, conn, ing_name: str):
@@ -163,6 +224,11 @@ def main():
     conn = mysql.connector.connect(**DB_CONFIG)
     cursor = conn.cursor(buffered=True)
 
+    # Disable triggers before creating users
+    print("Temporarily disabling triggers...")
+    cursor.execute("SET @TRIGGER_DISABLED = 1;")
+    cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
+
     # 1) Users
     ids = create_dummy_users(cursor, conn, n=10)
     admin_id = ids['admin_id']
@@ -173,6 +239,11 @@ def main():
 
     # 3) Recipes & Ingredients
     recipe_ids = create_dummy_recipes(cursor, conn, admin_id, num_recipes=20)
+    
+    # Re-enable triggers for subsequent operations
+    print("Re-enabling triggers...")
+    cursor.execute("SET @TRIGGER_DISABLED = NULL;")
+    cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
 
     # 4) Associations
     create_dummy_cooklist_recipes(cursor, conn, cooklist_ids, recipe_ids)

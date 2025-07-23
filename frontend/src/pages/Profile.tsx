@@ -10,18 +10,28 @@ import { useToast } from "@/hooks/use-toast";
 import { getCookListRecipes } from "@/services/api";
 import { useLikedRecipes } from "@/contexts/LikedRecipesContext";
 
-
-// Helper function to convert cookify level to title
-const getCookifyLevelTitle = (level: number): string => {
-  if (level >= 100) return "👑🐭 Remy the Rat";
-  if (level >= 80) return "🔥 Gordon Ramsey";
-  if (level >= 60) return "🏠 Restaurant Owner";
-  if (level >= 40) return "👨‍🍳 Chef de Cuisine";
-  if (level >= 25) return "🧂 Sous Chef";
-  if (level >= 15) return "🧑‍🍳 Commis Chef";
-  if (level >= 5) return "🔪 Prep Cook";
-  if (level >= 1) return "🧽 Dishwasher";
-  return "🐀 Street Rat";
+// Helper function to convert cookify level to title with emojis
+const getCookifyLevelTitle = (level: string): string => {
+  switch (level) {
+    case "Remy the Rat":
+      return "👑🐭 Remy the Rat";
+    case "Michelin Star Chef":
+      return "👨‍🍳 Michelin Star Chef";
+    case "Head Chef":
+      return "👨‍🍳 Head Chef";
+    case "Sous Chef":
+      return "🧂 Sous Chef";
+    case "Chef":
+      return "👨‍🍳 Chef";
+    case "Prep Cook":
+      return "🔪 Prep Cook";
+    case "Dishwasher":
+      return "🧽 Dishwasher";
+    case "Street Rat":
+      return "🐀 Street Rat";
+    default:
+      return `🍳 ${level}`;
+  }
 };
 
 const Profile = () => {
@@ -58,7 +68,7 @@ const Profile = () => {
           setUserDetails(details);
           setUserStats({
             ...stats,
-            cookify_level: getCookifyLevelTitle(Number(details.level))
+            cookify_level: getCookifyLevelTitle(stats.cookify_level) // Change from Number(details.level)
           });
           setUserRecipes(recipes);
           setUserCookLists(cookLists);
@@ -128,19 +138,19 @@ const Profile = () => {
   };
 
   // Fetch recipes for a cooklist with sorting
-const fetchCookListRecipes = async (cookListId: number, sort: string) => {
-  try {
-    const data = await getCookListRecipes(cookListId, sort);
-    setCookListRecipes(data);
-  } catch (err) {
-    setCookListRecipes([]);
-    toast({
-      title: "Error",
-      description: "Failed to fetch cooklist recipes.",
-      variant: "destructive",
-    });
-  }
-};
+  const fetchCookListRecipes = async (cookListId: number, sort: string) => {
+    try {
+      const data = await getCookListRecipes(cookListId, sort);
+      setCookListRecipes(data);
+    } catch (err) {
+      setCookListRecipes([]);
+      toast({
+        title: "Error",
+        description: "Failed to fetch cooklist recipes.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // When sort changes, refetch recipes for the selected cooklist
   useEffect(() => {
@@ -155,21 +165,21 @@ const fetchCookListRecipes = async (cookListId: number, sort: string) => {
     switch (level) {
       case "👑🐭 Remy the Rat":
         return { color: "text-purple-600", bgColor: "bg-purple-100" };
-      case "🔥 Gordon Ramsey":
+      case "👨‍🍳 Michelin Star Chef":
         return { color: "text-red-600", bgColor: "bg-red-100" };
-      case "🏠 Restaurant Owner":
+      case "👨‍🍳 Head Chef":
         return { color: "text-orange-600", bgColor: "bg-orange-100" };
-      case "👨‍🍳 Chef de Cuisine":
-        return { color: "text-yellow-600", bgColor: "bg-yellow-100" };
       case "🧂 Sous Chef":
         return { color: "text-green-600", bgColor: "bg-green-100" };
-      case "🧑‍🍳 Commis Chef":
+      case "👨‍🍳 Chef":
         return { color: "text-blue-600", bgColor: "bg-blue-100" };
       case "🔪 Prep Cook":
         return { color: "text-indigo-600", bgColor: "bg-indigo-100" };
       case "🧽 Dishwasher":
         return { color: "text-gray-600", bgColor: "bg-gray-100" };
-      default: // 🐀 Street Rat
+      case "🐀 Street Rat":
+        return { color: "text-gray-500", bgColor: "bg-gray-50" };
+      default:
         return { color: "text-gray-500", bgColor: "bg-gray-50" };
     }
   };
@@ -324,9 +334,11 @@ const fetchCookListRecipes = async (cookListId: number, sort: string) => {
                               <Package className="w-4 h-4 text-green-600" />
                               <h4 className="font-semibold text-green-800">{ingredient.name}</h4>
                             </div>
-                            <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
-                              {ingredient.category}
-                            </span>
+                            {ingredient.category && (
+                              <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                                {ingredient.category}
+                              </span>
+                            )}
                           </div>
                           <p className="text-green-700 font-medium mb-1">
                             Quantity: {ingredient.quantity}

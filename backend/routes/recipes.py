@@ -72,18 +72,10 @@ def get_all_recipes():
     try:
         limit = request.args.get('limit', default=12, type=int)
         offset = request.args.get('offset', default=0, type=int)
-        
-        # Get total count for pagination
-        count_result = db.session.execute(text("SELECT COUNT(*) FROM Recipes"))
-        total_recipes = count_result.scalar()
-        
         params = {"limit": limit, "offset": offset}
         result = db.session.execute(text(GET_RECIPES_JOINED_SQL), params)
         recipes = []
         for row in result:
-            # Format image URL properly
-            image_url = row[7] if row[7] else "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=500&h=300"
-            
             recipes.append({
                 "id": row[0],
                 "name": row[1],
@@ -91,14 +83,9 @@ def get_all_recipes():
                 "difficulty": row[3],
                 "cuisine": row[4],
                 "instructions": row[5],
-                "ingredients": row[6].split(',') if row[6] else [],
-                "image_url": image_url
+                "ingredients": row[6].split(',') if row[6] else []
             })
-        
-        return jsonify({
-            "recipes": recipes,
-            "total": total_recipes
-        }), 200
+        return jsonify(recipes), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

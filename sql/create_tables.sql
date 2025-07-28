@@ -5,238 +5,333 @@ CREATE DATABASE IF NOT EXISTS cookify;
 USE cookify;
 
 -- Drop tables if they exist (for clean slate)
-DROP TABLE IF EXISTS User_Activities;
-DROP TABLE IF EXISTS User_Ingredients;
+SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS CookList_Likes;
 DROP TABLE IF EXISTS Recipe_Likes;
 DROP TABLE IF EXISTS CookList_Recipes;
 DROP TABLE IF EXISTS Recipe_Ingredients;
+DROP TABLE IF EXISTS User_Ingredients;
 DROP TABLE IF EXISTS CookLists;
 DROP TABLE IF EXISTS Ingredients;
 DROP TABLE IF EXISTS Recipes;
+DROP TABLE IF EXISTS User_Levels;
 DROP TABLE IF EXISTS Users;
+SET FOREIGN_KEY_CHECKS = 1;
 
--- 1. Users Table - The chefs in our app
-CREATE TABLE Users (
-  User_ID INT AUTO_INCREMENT PRIMARY KEY,
-  Name VARCHAR(50) NOT NULL,
-  Email VARCHAR(100) NOT NULL UNIQUE,
-  Password VARCHAR(255) NOT NULL, -- For hashed passwords (bcrypt needs ~60 chars)
-  Date_of_Birth DATE,
-  Profile_Image VARCHAR(255), -- Store file path/URL
-  Points INT DEFAULT 0,
-  Cookify_Level VARCHAR(50) DEFAULT '🐀 Street Rat',
-  Created_At DATETIME DEFAULT CURRENT_TIMESTAMP,
-  Updated_At DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+-- 1. Users Table
+CREATE TABLE IF NOT EXISTS Users (
+    User_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Name VARCHAR(255) NOT NULL,
+    Email VARCHAR(255) UNIQUE NOT NULL,
+    Password VARCHAR(255) NOT NULL,
+    Date_of_Birth DATE,
+    Profile_Image TEXT,
+    Cookify_Level VARCHAR(50) DEFAULT 'Street Rat',
+    Points INT DEFAULT 0
 );
 
--- 2. Recipes Table - The dishes in our cookbook
-CREATE TABLE Recipes (
-  Recipe_ID INT AUTO_INCREMENT PRIMARY KEY,
-  User_ID INT NOT NULL,
-  Name VARCHAR(100) NOT NULL,
-  Duration INT, -- Duration in minutes
-  Difficulty ENUM('Easy', 'Medium', 'Hard'),
-  Cuisine VARCHAR(50),
-  Instructions TEXT,
-  Recipe_Link VARCHAR(255),
-  Image_URL VARCHAR(255),
-  Servings INT DEFAULT 1,
-  Created_At DATETIME DEFAULT CURRENT_TIMESTAMP,
-  Updated_At DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE
+-- 2. Recipes Table
+CREATE TABLE IF NOT EXISTS Recipes (
+    Recipe_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Name VARCHAR(255) NOT NULL,
+    Duration INT,
+    Difficulty VARCHAR(50),
+    Cuisine VARCHAR(100),
+    Instructions TEXT,
+    Image_URL VARCHAR(255),
+    User_ID INT,
+    FOREIGN KEY (User_ID) REFERENCES Users(User_ID)
 );
 
--- 3. Ingredients Table - Our pantry
-CREATE TABLE Ingredients (
-  Ingredient_ID INT AUTO_INCREMENT PRIMARY KEY,
-  Name VARCHAR(100) NOT NULL UNIQUE,
-  Season VARCHAR(50),
-  Price DECIMAL(8,2), -- Supports prices up to 999,999.99
-  Nutritional_Info TEXT,
-  Category VARCHAR(50), -- e.g., 'Protein', 'Vegetable', 'Spice'
-  Created_At DATETIME DEFAULT CURRENT_TIMESTAMP
+-- 3. Ingredients Table
+CREATE TABLE IF NOT EXISTS Ingredients (
+    Ingredient_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Name VARCHAR(255) NOT NULL
 );
 
--- 4. Recipe-Ingredients Junction Table - What goes into each recipe
-CREATE TABLE Recipe_Ingredients (
-  Recipe_ID INT NOT NULL,
-  Ingredient_ID INT NOT NULL,
-  Quantity VARCHAR(50), -- e.g., "2 cups", "1 tablespoon"
-  Unit VARCHAR(20),     -- e.g., "cups", "grams", "pieces"
-  Is_Optional BOOLEAN DEFAULT FALSE,
-  PRIMARY KEY (Recipe_ID, Ingredient_ID),
-  FOREIGN KEY (Recipe_ID) REFERENCES Recipes(Recipe_ID) ON DELETE CASCADE,
-  FOREIGN KEY (Ingredient_ID) REFERENCES Ingredients(Ingredient_ID)
+-- 4. User_Ingredients Table
+CREATE TABLE IF NOT EXISTS User_Ingredients (
+    User_ID INT NOT NULL,
+    Ingredient_ID INT NOT NULL,
+    Quantity INT NOT NULL,
+    PRIMARY KEY (User_ID, Ingredient_ID),
+    FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Ingredient_ID) REFERENCES Ingredients(Ingredient_ID) ON DELETE CASCADE
 );
 
--- 5. Cook Lists Table - User's recipe collections 
-CREATE TABLE CookLists (
-  CookList_ID INT AUTO_INCREMENT PRIMARY KEY,
-  User_ID INT NOT NULL,
-  Name VARCHAR(100) NOT NULL,
-  Description TEXT,
-  Is_Public BOOLEAN DEFAULT TRUE,
-  Created_At DATETIME DEFAULT CURRENT_TIMESTAMP,
-  Updated_At DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE
+-- 5. Recipe_Ingredients Table
+CREATE TABLE IF NOT EXISTS Recipe_Ingredients (
+    Recipe_ID INT,
+    Ingredient_ID INT,
+    Quantity INT NOT NULL,
+    Unit VARCHAR(255),
+    PRIMARY KEY (Recipe_ID, Ingredient_ID),
+    FOREIGN KEY (Recipe_ID) REFERENCES Recipes(Recipe_ID),
+    FOREIGN KEY (Ingredient_ID) REFERENCES Ingredients(Ingredient_ID)
 );
 
--- 6. CookList-Recipes Junction Table - Which recipes are in each cook list
+-- 6. CookLists Table
+CREATE TABLE IF NOT EXISTS CookLists (
+    CookList_ID INT AUTO_INCREMENT PRIMARY KEY,
+    User_ID INT NOT NULL,
+    Name VARCHAR(100) NOT NULL,
+    Description TEXT,
+    Is_Public BOOLEAN DEFAULT TRUE,
+    Created_At DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Updated_At DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE
+);
+
+-- 7. CookList_Recipes Table
 CREATE TABLE CookList_Recipes (
-  CookList_ID INT NOT NULL,
-  Recipe_ID INT NOT NULL,
-  Added_At DATETIME DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (CookList_ID, Recipe_ID),
-  FOREIGN KEY (CookList_ID) REFERENCES CookLists(CookList_ID) ON DELETE CASCADE,
-  FOREIGN KEY (Recipe_ID) REFERENCES Recipes(Recipe_ID) ON DELETE CASCADE
+    CookList_ID INT NOT NULL,
+    Recipe_ID INT NOT NULL,
+    Added_At DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (CookList_ID, Recipe_ID),
+    FOREIGN KEY (CookList_ID) REFERENCES CookLists(CookList_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Recipe_ID) REFERENCES Recipes(Recipe_ID) ON DELETE CASCADE
 );
 
--- 7. Recipe Likes Table - Which recipes users have liked
-CREATE TABLE Recipe_Likes (
-  User_ID INT NOT NULL,
-  Recipe_ID INT NOT NULL,
-  Liked_At DATETIME DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (User_ID, Recipe_ID),
-  FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE,
-  FOREIGN KEY (Recipe_ID) REFERENCES Recipes(Recipe_ID) ON DELETE CASCADE
+-- 8. Recipe_Likes Table
+CREATE TABLE IF NOT EXISTS Recipe_Likes (
+    User_ID INT,
+    Recipe_ID INT,
+    Liked_At DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (User_ID, Recipe_ID),
+    FOREIGN KEY (User_ID) REFERENCES Users(User_ID),
+    FOREIGN KEY (Recipe_ID) REFERENCES Recipes(Recipe_ID)
 );
 
--- 8. CookList Likes Table - Which cook lists users have liked
-CREATE TABLE CookList_Likes (
-  User_ID INT NOT NULL,
-  CookList_ID INT NOT NULL,
-  Liked_At DATETIME DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (User_ID, CookList_ID),
-  FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE,
-  FOREIGN KEY (CookList_ID) REFERENCES CookLists(CookList_ID) ON DELETE CASCADE
+-- 9. CookList_Likes Table
+CREATE TABLE IF NOT EXISTS CookList_Likes (
+    User_ID INT,
+    CookList_ID INT,
+    Liked_At DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (User_ID, CookList_ID),
+    FOREIGN KEY (User_ID) REFERENCES Users(User_ID),
+    FOREIGN KEY (CookList_ID) REFERENCES CookLists(CookList_ID)
 );
 
--- 9. User Ingredients Table - What ingredients users have in their pantry
-CREATE TABLE User_Ingredients (
-  User_ID INT NOT NULL,
-  Ingredient_ID INT NOT NULL,
-  Quantity VARCHAR(50) NOT NULL, -- e.g., "2 cups", "500 grams", "3 pieces"
-  Added_At DATETIME DEFAULT CURRENT_TIMESTAMP,
-  Updated_At DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (User_ID, Ingredient_ID),
-  FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE,
-  FOREIGN KEY (Ingredient_ID) REFERENCES Ingredients(Ingredient_ID) ON DELETE CASCADE
+-- 10. User_Levels Table for leveling system
+CREATE TABLE IF NOT EXISTS User_Levels (
+    Level_Name VARCHAR(50) PRIMARY KEY,
+    Min_Points INT NOT NULL,
+    Image_Path VARCHAR(1024) NOT NULL
 );
 
--- 10. User Activity Table - Track actions for leveling system
-CREATE TABLE User_Activities (
-  Activity_ID INT AUTO_INCREMENT PRIMARY KEY,
-  User_ID INT NOT NULL,
-  Activity_Type ENUM('recipe_created', 'recipe_liked', 'recipe_cooked', 'cooklist_created', 'cooklist_shared', 'recipe_rated', 'recipe_commented'),
-  Points_Earned INT DEFAULT 0,
-  Activity_Date DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (User_ID) REFERENCES Users(User_ID) ON DELETE CASCADE
-); 
+-- Insert level data
+INSERT INTO User_Levels (Level_Name, Min_Points, Image_Path) VALUES
+('Street Rat', 0, 'rat'),
+('Dishwasher', 10, 'dishwasher'),
+('Prep Cook', 25, 'prepcook'),
+('Chef', 50, 'chef'),
+('Sous Chef', 250, 'souschef'),
+('Head Chef', 500, 'headchef'),
+('Michelin Star Chef', 1000, 'starchef'),
+('Remy the Rat', 10000, 'remy');
 
--- Performance Indexes for faster queries
-CREATE INDEX idx_recipes_cuisine ON Recipes(Cuisine);
-CREATE INDEX idx_recipes_difficulty ON Recipes(Difficulty);
-CREATE INDEX idx_recipes_duration ON Recipes(Duration);
-CREATE INDEX idx_ingredients_category ON Ingredients(Category);
-CREATE INDEX idx_ingredients_season ON Ingredients(Season);
-CREATE INDEX idx_users_points ON Users(Points);
-CREATE INDEX idx_recipe_likes_recipe ON Recipe_Likes(Recipe_ID);
-CREATE INDEX idx_cooklist_likes_cooklist ON CookList_Likes(CookList_ID);
-CREATE INDEX idx_user_ingredients_user ON User_Ingredients(User_ID);
-CREATE INDEX idx_user_ingredients_ingredient ON User_Ingredients(Ingredient_ID);
+-- Drop existing triggers before creating new ones
+DROP TRIGGER IF EXISTS After_Cooklist_Like;
+DROP TRIGGER IF EXISTS After_Recipe_Like;
+DROP TRIGGER IF EXISTS CreateLikedRecipes;
+DROP TRIGGER IF EXISTS UniqueLikedCooklist;
+DROP TRIGGER IF EXISTS AddToLikedRecipes;
+
+-- ADVANCED FEATURE 2 & 3: Triggers for points and leveling system
+DELIMITER //
+CREATE TRIGGER After_Cooklist_Like
+AFTER INSERT ON CookList_Likes
+FOR EACH ROW
+BEGIN
+    DECLARE cooklist_owner INT;
+    DECLARE new_level VARCHAR(50);
+    DECLARE new_image_path VARCHAR(1024);
+    DECLARE updated_points INT;
+    
+    IF @TRIGGER_DISABLED IS NULL THEN
+        -- Find the cooklist owner
+        SELECT User_ID INTO cooklist_owner
+        FROM CookLists 
+        WHERE CookList_ID = NEW.CookList_ID;
+        
+        -- Calculate new points
+        SET updated_points = (SELECT Points + 1 FROM Users WHERE User_ID = cooklist_owner);
+        
+        -- Find appropriate level for new points
+        SELECT Level_Name, Image_Path 
+        INTO new_level, new_image_path
+        FROM User_Levels
+        WHERE Min_Points <= updated_points
+        ORDER BY Min_Points DESC
+        LIMIT 1;
+        
+        -- Update both points and level at once
+        UPDATE Users 
+        SET Points = updated_points,
+            Cookify_Level = new_level,
+            Profile_Image = new_image_path
+        WHERE User_ID = cooklist_owner;
+    END IF;
+END//
+
+CREATE TRIGGER After_Recipe_Like
+AFTER INSERT ON Recipe_Likes
+FOR EACH ROW
+BEGIN
+    DECLARE recipe_owner INT;
+    DECLARE new_level VARCHAR(50);
+    DECLARE new_image_path VARCHAR(1024);
+    DECLARE updated_points INT;
+    
+    IF @TRIGGER_DISABLED IS NULL THEN
+        -- Find the recipe owner
+        SELECT User_ID INTO recipe_owner 
+        FROM Recipes 
+        WHERE Recipe_ID = NEW.Recipe_ID;
+        
+        -- Calculate new points
+        SET updated_points = (SELECT Points + 1 FROM Users WHERE User_ID = recipe_owner);
+        
+        -- Find appropriate level for new points
+        SELECT Level_Name, Image_Path 
+        INTO new_level, new_image_path
+        FROM User_Levels
+        WHERE Min_Points <= updated_points
+        ORDER BY Min_Points DESC
+        LIMIT 1;
+        
+        -- Update both points and level at once
+        UPDATE Users 
+        SET Points = updated_points,
+            Cookify_Level = new_level,
+            Profile_Image = new_image_path
+        WHERE User_ID = recipe_owner;
+    END IF;
+END//
+
+-- BASIC FEATURE 5: Trigger for automatically generating 'Liked Recipes' cooklist
+delimiter //
+CREATE TRIGGER CreateLikedRecipes
+AFTER INSERT ON Users
+FOR EACH ROW
+	BEGIN
+    IF ((SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') = 0) THEN
+		  INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (NEW.User_ID, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
+    END IF;
+	END; //
+
+-- trigger for rejecting when a user attempts to create a 'Liked Recipes' cooklist on their own
+delimiter //
+CREATE TRIGGER UniqueLikedCooklist
+BEFORE INSERT ON Cooklists
+FOR EACH ROW
+	BEGIN
+		IF (NEW.Name = 'Liked Recipes' AND (SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') > 0) THEN
+			SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Only one Liked Recipes cooklist can exist!';
+		END IF;
+	END; //
+
+-- creating trigger for automatically adding liked recipes to Liked Recipes
+delimiter //
+CREATE TRIGGER AddToLikedRecipes
+AFTER INSERT ON Recipe_Likes
+FOR EACH ROW
+	BEGIN
+		IF ((SELECT COUNT(*) FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes') = 0) THEN
+			INSERT INTO Cooklists (User_ID, Name, Description, Is_Public) VALUES (NEW.User_ID, 'Liked Recipes', 'All your liked recipes in one place!', TRUE);
+		END IF;
+		INSERT INTO Cooklist_Recipes VALUES ((SELECT Cooklist_ID FROM Cooklists WHERE User_ID = NEW.User_ID AND Name = 'Liked Recipes'), NEW.Recipe_ID, NEW.Liked_At);
+	END; //
+
+-- Performance Indexes (matching Python schema)
+CREATE INDEX idx_ingredients_name ON Ingredients (Name);
+CREATE INDEX idx_ri_recipe ON Recipe_Ingredients (Recipe_ID);
+CREATE INDEX idx_ri_ingredient ON Recipe_Ingredients (Ingredient_ID);
+CREATE INDEX idx_ui_user ON User_Ingredients (User_ID);
+CREATE INDEX idx_ui_ingredient ON User_Ingredients (Ingredient_ID);
+CREATE INDEX idx_recipe_cuisine ON Recipes (Cuisine);
+CREATE INDEX idx_recipe_duration ON Recipes (Duration);
+CREATE INDEX idx_added_at ON CookList_Recipes (CookList_ID, Added_At);
+CREATE INDEX idx_recipes_name ON Recipes (Name);
 
 -- Insert sample data for testing
--- Sample users with different levels
 INSERT INTO Users (Name, Email, Password, Date_of_Birth, Points, Cookify_Level) VALUES
-('Alice Chef', 'alice@cookify.com', '$2b$10$hashedpassword1', '1995-03-15', 45, '🏠 Restaurant Owner'),
-('Bob Novice', 'bob@cookify.com', '$2b$10$hashedpassword2', '1988-07-22', 8, '🐀 Street Rat'),
-('Carol Expert', 'carol@cookify.com', '$2b$10$hashedpassword3', '1992-11-03', 150, '👑🐭 Remy the Rat'),
-('Dave Beginner', 'dave@cookify.com', '$2b$10$hashedpassword4', '1990-05-18', 2, '🐀 Street Rat'),
-('Emma Master', 'emma@cookify.com', '$2b$10$hashedpassword5', '1985-12-08', 350, '👑🐭 Remy the Rat');
+('Alice Chef', 'alice@cookify.com', '$2b$10$hashedpassword1', '1995-03-15', 45, 'Chef'),
+('Bob Novice', 'bob@cookify.com', '$2b$10$hashedpassword2', '1988-07-22', 8, 'Street Rat'),
+('Carol Expert', 'carol@cookify.com', '$2b$10$hashedpassword3', '1992-11-03', 150, 'Sous Chef'),
+('Dave Beginner', 'dave@cookify.com', '$2b$10$hashedpassword4', '1990-05-18', 2, 'Street Rat'),
+('Emma Master', 'emma@cookify.com', '$2b$10$hashedpassword5', '1985-12-08', 350, 'Sous Chef');
 
--- Sample ingredients organized by category
-INSERT INTO Ingredients (Name, Season, Price, Category) VALUES
--- Proteins
-('Chicken Breast', 'All Year', 8.99, 'Protein'),
-('Ground Beef', 'All Year', 6.50, 'Protein'),
-('Salmon Fillet', 'All Year', 15.99, 'Protein'),
-('Eggs', 'All Year', 4.25, 'Protein'),
+-- Sample ingredients
+INSERT INTO Ingredients (Name) VALUES
+('Chicken Breast'),
+('Ground Beef'),
+('Salmon Fillet'),
+('Eggs'),
+('Tomatoes'),
+('Onion'),
+('Garlic'),
+('Bell Peppers'),
+('Spinach'),
+('Carrots'),
+('Basil'),
+('Oregano'),
+('Black Pepper'),
+('Salt'),
+('Paprika'),
+('Pasta'),
+('Rice'),
+('Bread'),
+('Parmesan Cheese'),
+('Mozzarella'),
+('Butter'),
+('Olive Oil'),
+('Lemon');
 
--- Vegetables
-('Tomatoes', 'Summer', 3.50, 'Vegetable'),
-('Onion', 'All Year', 2.25, 'Vegetable'),
-('Garlic', 'All Year', 1.50, 'Vegetable'),
-('Bell Peppers', 'Summer', 4.99, 'Vegetable'),
-('Spinach', 'Spring', 2.75, 'Vegetable'),
-('Carrots', 'Fall', 1.99, 'Vegetable'),
-
--- Herbs & Spices
-('Basil', 'Summer', 2.99, 'Herb'),
-('Oregano', 'All Year', 3.50, 'Herb'),
-('Black Pepper', 'All Year', 3.99, 'Spice'),
-('Salt', 'All Year', 0.99, 'Seasoning'),
-('Paprika', 'All Year', 4.50, 'Spice'),
-
--- Grains & Carbs
-('Pasta', 'All Year', 1.99, 'Grain'),
-('Rice', 'All Year', 3.25, 'Grain'),
-('Bread', 'All Year', 2.50, 'Grain'),
-
--- Dairy
-('Parmesan Cheese', 'All Year', 8.50, 'Dairy'),
-('Mozzarella', 'All Year', 5.99, 'Dairy'),
-('Butter', 'All Year', 4.75, 'Dairy'),
-
--- Others
-('Olive Oil', 'All Year', 12.99, 'Oil'),
-('Lemon', 'All Year', 0.75, 'Citrus');
-
--- Sample recipes with varying difficulties
-INSERT INTO Recipes (User_ID, Name, Duration, Difficulty, Cuisine, Instructions, Servings, Image_URL) VALUES
-(1, 'Classic Spaghetti Carbonara', 20, 'Medium', 'Italian', 'Cook pasta. Mix eggs and cheese. Combine with hot pasta and bacon. Serve immediately.', 4, '/images/carbonara.jpg'),
-(2, 'Simple Tomato Salad', 10, 'Easy', 'Mediterranean', 'Slice tomatoes. Add basil, olive oil, salt and pepper. Let sit for 10 minutes.', 2, '/images/tomato-salad.jpg'),
-(2, 'Garlic Butter Chicken', 25, 'Easy', 'American', 'Season chicken with salt and pepper. Saute with garlic and butter until golden.', 3, '/images/garlic-chicken.jpg'),
-(3, 'Beef Stir Fry', 15, 'Medium', 'Asian', 'Cut beef into strips. Stir fry with vegetables and soy sauce over high heat.', 4, '/images/beef-stirfry.jpg'),
-(5, 'Gordon Ramsay Beef Wellington', 180, 'Hard', 'British', 'Sear beef, wrap in pâté and pastry. Bake until golden. Advanced technique required.', 6, '/images/beef-wellington.jpg');
+-- Sample recipes
+INSERT INTO Recipes (User_ID, Name, Duration, Difficulty, Cuisine, Instructions, Image_URL) VALUES
+(1, 'Classic Spaghetti Carbonara', 20, 'Medium', 'Italian', 'Cook pasta. Mix eggs and cheese. Combine with hot pasta and bacon. Serve immediately.', '/images/carbonara.jpg'),
+(2, 'Simple Tomato Salad', 10, 'Easy', 'Mediterranean', 'Slice tomatoes. Add basil, olive oil, salt and pepper. Let sit for 10 minutes.', '/images/tomato-salad.jpg'),
+(2, 'Garlic Butter Chicken', 25, 'Easy', 'American', 'Season chicken with salt and pepper. Saute with garlic and butter until golden.', '/images/garlic-chicken.jpg'),
+(3, 'Beef Stir Fry', 15, 'Medium', 'Asian', 'Cut beef into strips. Stir fry with vegetables and soy sauce over high heat.', '/images/beef-stirfry.jpg'),
+(5, 'Gordon Ramsay Beef Wellington', 180, 'Hard', 'British', 'Sear beef, wrap in pâté and pastry. Bake until golden. Advanced technique required.', '/images/beef-wellington.jpg');
 
 -- Link recipes to ingredients
 INSERT INTO Recipe_Ingredients (Recipe_ID, Ingredient_ID, Quantity, Unit) VALUES
-
 -- Classic Spaghetti Carbonara (Recipe_ID = 1)
-(1, 16, '400', 'grams'),     -- Pasta
-(1, 4, '3', 'large'),        -- Eggs
-(1, 19, '100', 'grams'),     -- Parmesan
-(1, 13, '1', 'teaspoon'),    -- Black Pepper
-(1, 14, '1', 'pinch'),       -- Salt
+(1, 16, 400, 'grams'),     -- Pasta
+(1, 4, 3, 'large'),        -- Eggs
+(1, 19, 100, 'grams'),     -- Parmesan
+(1, 13, 1, 'teaspoon'),    -- Black Pepper
+(1, 14, 1, 'pinch'),       -- Salt
 
 -- Simple Tomato Salad (Recipe_ID = 2)
-(2, 5, '4', 'large'),        -- Tomatoes
-(2, 11, '1/4', 'cup'),       -- Basil
-(2, 22, '3', 'tablespoons'), -- Olive Oil
-(2, 14, '1', 'pinch'),       -- Salt
-(2, 13, '1', 'pinch'),       -- Black Pepper
+(2, 5, 4, 'large'),        -- Tomatoes
+(2, 11, 1, 'cup'),         -- Basil
+(2, 22, 3, 'tablespoons'), -- Olive Oil
+(2, 14, 1, 'pinch'),       -- Salt
+(2, 13, 1, 'pinch'),       -- Black Pepper
 
 -- Garlic Butter Chicken (Recipe_ID = 3)
-(3, 1, '4', 'pieces'),       -- Chicken Breast
-(3, 7, '4', 'cloves'),       -- Garlic
-(3, 21, '2', 'tablespoons'), -- Butter
-(3, 14, '1', 'teaspoon'),    -- Salt
-(3, 13, '1/2', 'teaspoon'),  -- Black Pepper
+(3, 1, 4, 'pieces'),       -- Chicken Breast
+(3, 7, 4, 'cloves'),       -- Garlic
+(3, 21, 2, 'tablespoons'), -- Butter
+(3, 14, 1, 'teaspoon'),    -- Salt
+(3, 13, 1, 'teaspoon'),    -- Black Pepper
 
 -- Beef Stir Fry (Recipe_ID = 4)
-(4, 2, '500', 'grams'),      -- Ground Beef
-(4, 8, '2', 'medium'),       -- Bell Peppers
-(4, 6, '1', 'large'),        -- Onion
-(4, 7, '3', 'cloves'),       -- Garlic
-(4, 22, '2', 'tablespoons'), -- Olive Oil
+(4, 2, 500, 'grams'),      -- Ground Beef
+(4, 8, 2, 'medium'),       -- Bell Peppers
+(4, 6, 1, 'large'),        -- Onion
+(4, 7, 3, 'cloves'),       -- Garlic
+(4, 22, 2, 'tablespoons'), -- Olive Oil
 
 -- Beef Wellington (Recipe_ID = 5)
-(5, 2, '1', 'kg'),           -- Ground Beef (substitute for beef tenderloin)
-(5, 7, '6', 'cloves'),       -- Garlic
-(5, 21, '4', 'tablespoons'), -- Butter
-(5, 14, '2', 'teaspoons'),   -- Salt
-(5, 13, '1', 'teaspoon');    -- Black Pepper
+(5, 2, 1, 'kg'),           -- Ground Beef
+(5, 7, 6, 'cloves'),       -- Garlic
+(5, 21, 4, 'tablespoons'), -- Butter
+(5, 14, 2, 'teaspoons'),   -- Salt
+(5, 13, 1, 'teaspoon');    -- Black Pepper
 
 -- Create sample cook lists
 INSERT INTO CookLists (User_ID, Name, Description, Is_Public) VALUES
@@ -248,93 +343,19 @@ INSERT INTO CookLists (User_ID, Name, Description, Is_Public) VALUES
 
 -- Add recipes to cook lists
 INSERT INTO CookList_Recipes (CookList_ID, Recipe_ID) VALUES
--- Quick Weeknight Dinners
-(1, 2), -- Tomato Salad
-(1, 3), -- Garlic Chicken
-(1, 4), -- Beef Stir Fry
+(1, 2), (1, 3), (1, 4),  -- Quick Weeknight Dinners
+(2, 2), (2, 3),          -- Beginner Friendly
+(3, 1), (3, 2),          -- Italian Classics
+(4, 2), (4, 3),          -- Learning to Cook
+(5, 1), (5, 5);          -- Master Chef Challenge
 
--- Beginner Friendly
-(2, 2), -- Tomato Salad
-(2, 3), -- Garlic Chicken
-
--- Italian Classics
-(3, 1), -- Carbonara
-(3, 2), -- Tomato Salad
-
--- Learning to Cook
-(4, 2), -- Tomato Salad
-(4, 3), -- Garlic Chicken
-
--- Master Chef Challenge
-(5, 1), -- Carbonara
-(5, 5); -- Beef Wellington
-
--- Add some likes to make the data realistic
-INSERT INTO Recipe_Likes (User_ID, Recipe_ID) VALUES
-(1, 2), -- Alice likes Tomato Salad
-(1, 4), -- Alice likes Beef Stir Fry
-(2, 1), -- Bob likes Carbonara
-(2, 3), -- Bob likes Garlic Chicken
-(3, 1), -- Carol likes Carbonara
-(3, 5), -- Carol likes Beef Wellington
-(4, 2), -- Dave likes Tomato Salad
-(4, 3), -- Dave likes Garlic Chicken
-(5, 5); -- Emma likes Beef Wellington
-
-INSERT INTO CookList_Likes (User_ID, CookList_ID) VALUES
-(2, 1), -- Bob likes Quick Weeknight Dinners
-(4, 2), -- Dave likes Beginner Friendly
-(1, 3), -- Alice likes Italian Classics
-(3, 5), -- Carol likes Master Chef Challenge
-(2, 4); -- Bob likes Learning to Cook
-
--- Add sample user ingredients (what users have in their pantry)
+-- Add some user ingredients (pantry items)
 INSERT INTO User_Ingredients (User_ID, Ingredient_ID, Quantity) VALUES
--- Alice's pantry (well-stocked cook)
-(1, 1, '2 lbs'),        -- Chicken Breast
-(1, 5, '6 large'),      -- Tomatoes
-(1, 6, '3 medium'),     -- Onion
-(1, 7, '1 bulb'),       -- Garlic
-(1, 11, '1 bunch'),     -- Basil
-(1, 16, '2 boxes'),     -- Pasta
-(1, 22, '500ml'),       -- Olive Oil
-
--- Bob's basic pantry (beginner)
-(2, 4, '12 count'),     -- Eggs
-(2, 6, '2 medium'),     -- Onion
-(2, 14, '1 container'), -- Salt
-(2, 17, '2 lbs'),       -- Rice
-
--- Carol's advanced pantry (expert cook)
-(3, 1, '3 lbs'),        -- Chicken Breast
-(3, 2, '2 lbs'),        -- Ground Beef
-(3, 3, '1 lb'),         -- Salmon Fillet
-(3, 19, '200g'),        -- Parmesan Cheese
-(3, 21, '2 sticks'),    -- Butter
-(3, 7, '2 bulbs'),      -- Garlic
-
--- Dave's minimal pantry (just starting)
-(4, 16, '1 box'),       -- Pasta
-(4, 14, '1 container'), -- Salt
-(4, 13, '1 container'), -- Black Pepper
-
--- Emma's gourmet pantry (master chef)
-(5, 2, '5 lbs'),        -- Ground Beef
-(5, 19, '500g'),        -- Parmesan Cheese
-(5, 11, '2 bunches'),   -- Basil
-(5, 15, '1 lb'),        -- Paprika
-(5, 22, '1 liter');     -- Olive Oil
-
--- Add some activity tracking for the leveling system
-INSERT INTO User_Activities (User_ID, Activity_Type, Points_Earned) VALUES
-(1, 'recipe_liked', 5),
-(1, 'cooklist_created', 10),
-(2, 'recipe_liked', 5),
-(2, 'recipe_cooked', 15),
-(3, 'cooklist_created', 10),
-(3, 'recipe_cooked', 20),
-(4, 'recipe_liked', 5),
-(5, 'recipe_cooked', 25);
+(1, 1, 2), (1, 5, 6), (1, 6, 3), (1, 7, 1), (1, 11, 1), (1, 16, 2), (1, 22, 500),  -- Alice's pantry
+(2, 4, 12), (2, 6, 2), (2, 14, 1), (2, 17, 2),                                       -- Bob's basic pantry
+(3, 1, 3), (3, 2, 2), (3, 3, 1), (3, 19, 200), (3, 21, 2), (3, 7, 2),              -- Carol's advanced pantry
+(4, 16, 1), (4, 14, 1), (4, 13, 1),                                                  -- Dave's minimal pantry
+(5, 2, 5), (5, 19, 500), (5, 11, 2), (5, 15, 1), (5, 22, 1000);                    -- Emma's gourmet pantry
 
 -- Display success message and basic stats
 SELECT 'Database setup complete!' as Status;

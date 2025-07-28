@@ -3184,3 +3184,7 @@ DEBUG: Row data: (21, 'Crispy Salt and Pepper Potatoes', 30, 'Easy', 'American',
 127.0.0.1 - - [23/Jul/2025 17:02:59] "GET /api/recipes/2668/liked HTTP/1.1" 200 -
 127.0.0.1 - - [23/Jul/2025 17:02:59] "GET /api/recipes/2984/liked HTTP/1.1" 200 -
 127.0.0.1 - - [23/Jul/2025 17:02:59] "GET /api/recipes/3004/liked HTTP/1.1" 200 -
+ * Detected change in '/Users/judyyang/Desktop/cs348-project/cookify/backend/routes/recipes.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 238-455-604

@@ -30,6 +30,7 @@ WHERE
 GET_RECIPES_JOINED_SQL = """
 WITH RecipeData AS (
     SELECT r.Recipe_ID, r.Name, r.Duration, r.Difficulty, r.Cuisine,
+<<<<<<< HEAD
            r.Instructions, r.Image_URL,
            CONCAT(i.Name, 
                   CASE 
@@ -37,6 +38,11 @@ WITH RecipeData AS (
                     WHEN ri.Quantity IS NOT NULL THEN CONCAT(' - ', ri.Quantity)
                     ELSE ''
                   END) AS Ingredient
+=======
+           r.Instructions,
+           r.Image_URL,
+           i.Name AS Ingredient
+>>>>>>> 8446a50de3c51a15389f044bfe9a7eeb40272e41
     FROM Recipes r
     LEFT JOIN Recipe_Ingredients ri ON r.Recipe_ID = ri.Recipe_ID
     LEFT JOIN Ingredients i ON ri.Ingredient_ID = i.Ingredient_ID
@@ -52,6 +58,7 @@ LIMIT :limit OFFSET :offset;
 """
 
 GET_RECIPE_JOINED_SQL = """
+<<<<<<< HEAD
 SELECT r.Recipe_ID, r.Name, r.Duration, r.Difficulty, r.Cuisine, r.Instructions, r.Image_URL,
        GROUP_CONCAT(CONCAT(i.Name, 
                           CASE 
@@ -59,6 +66,10 @@ SELECT r.Recipe_ID, r.Name, r.Duration, r.Difficulty, r.Cuisine, r.Instructions,
                             WHEN ri.Quantity IS NOT NULL THEN CONCAT(' - ', ri.Quantity)
                             ELSE ''
                           END)) AS Ingredients
+=======
+SELECT r.Recipe_ID, r.Name, r.Duration, r.Difficulty, r.Cuisine, r.Instructions,  r.Image_URL,
+       GROUP_CONCAT(i.Name) AS Ingredients
+>>>>>>> 8446a50de3c51a15389f044bfe9a7eeb40272e41
 FROM Recipes r
 LEFT JOIN Recipe_Ingredients ri ON r.Recipe_ID = ri.Recipe_ID
 LEFT JOIN Ingredients i ON ri.Ingredient_ID = i.Ingredient_ID

@@ -1,16 +1,6 @@
 import { useState, useEffect } from "react";
-<<<<<<< HEAD
 import { Clock, ChefHat, Plus, Heart, Trash2, Eye } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-=======
-import { Clock, ChefHat, Plus, Heart } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
->>>>>>> 8446a50de3c51a15389f044bfe9a7eeb40272e41
 import { Badge } from "@/components/ui/badge";
 import { RecipeDialog } from "./RecipeDialog";
 import { CookListDialog } from "./CookListDialog";
@@ -121,7 +111,6 @@ export const RecipeCard = ({ recipe, showDeleteButton = false, onDelete }: Recip
       setIsLoading(false);
     }
   };
-<<<<<<< HEAD
 
   const handleDeleteRecipe = async () => {
     setIsDeleting(true);
@@ -148,8 +137,6 @@ export const RecipeCard = ({ recipe, showDeleteButton = false, onDelete }: Recip
     }
   };
 
-=======
->>>>>>> 8446a50de3c51a15389f044bfe9a7eeb40272e41
   return (
     <>
       <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden border-2 hover:border-blue-200">
@@ -250,29 +237,17 @@ export const RecipeCard = ({ recipe, showDeleteButton = false, onDelete }: Recip
           <button
             onClick={handleLikeRecipe}
             disabled={isLoading}
-<<<<<<< HEAD
             className={`p-2 rounded-lg transition-colors duration-200 flex items-center justify-center ${
               isLiked 
                 ? 'bg-red-50 hover:bg-red-100 text-red-700' 
                 : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
             } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             title={isLiked ? "Unlike Recipe" : "Like Recipe"}
-=======
-            className={`flex-1 py-2 px-3 rounded-lg transition-colors duration-200 font-medium flex items-center justify-center gap-1 text-sm ${
-              isLiked
-                ? "bg-red-50 hover:bg-red-100 text-red-700"
-                : "bg-gray-50 hover:bg-gray-100 text-gray-700"
-            } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
->>>>>>> 8446a50de3c51a15389f044bfe9a7eeb40272e41
           >
             {isLoading ? (
               <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             ) : (
-<<<<<<< HEAD
               <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-=======
-              <Heart className={`w-3 h-3 ${isLiked ? "fill-current" : ""}`} />
->>>>>>> 8446a50de3c51a15389f044bfe9a7eeb40272e41
             )}
           </button>
           {showDeleteButton && recipe.isMyRecipe && (
